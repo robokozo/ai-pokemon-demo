@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
   "dependencies": {
     "@tresjs/cientos": "^5.6.0",
@@ -23,6 +25,7 @@
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
+    "oxfmt": "^0.40.0",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
     "vue-tsc": "^3.2.5"
