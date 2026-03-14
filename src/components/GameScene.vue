@@ -41,13 +41,18 @@ function closeDialog() {
   dialogOpen.value = false
 }
 
+function interact() {
+  if (dialogOpen.value) return
+  if (gameState.nearbyNPC) {
+    openDialog(gameState.nearbyNPC)
+  } else if (nearRadio.value) {
+    toggleMusic()
+  }
+}
+
 function handleInteract(e: KeyboardEvent) {
   if ((e.key === 'e' || e.key === 'E' || e.key === ' ') && !dialogOpen.value) {
-    if (gameState.nearbyNPC) {
-      openDialog(gameState.nearbyNPC)
-    } else if (nearRadio.value) {
-      toggleMusic()
-    }
+    interact()
   }
   if (e.key === 'Escape' && dialogOpen.value) {
     closeDialog()
@@ -363,26 +368,32 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <div class="control-row control-row--touch"><span class="touch-icon">👆</span> <span>Tap to move</span></div>
       </div>
 
-      <div v-if="gameState.nearbyNPC && !dialogOpen" class="interaction-prompt">
+      <button v-if="gameState.nearbyNPC && !dialogOpen" class="interaction-prompt"
+        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
+        @pointerdown.stop.prevent="interact">
         <span class="prompt-icon">💬</span>
-        Press <kbd>E</kbd><span class="touch-hint"> or tap button</span> to talk to
-        <strong>{{ gameState.nearbyNPC.name }}</strong>
-      </div>
-      <div v-else-if="nearRadio && !dialogOpen" class="interaction-prompt">
+        <span>Talk to <strong>{{ gameState.nearbyNPC.name }}</strong></span>
+        <kbd class="key-hint">E</kbd>
+      </button>
+      <button v-else-if="nearRadio && !dialogOpen" class="interaction-prompt"
+        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
+        @pointerdown.stop.prevent="interact">
         <span class="prompt-icon">📻</span>
-        Press <kbd>E</kbd><span class="touch-hint"> or tap button</span> to
-        {{ playing ? 'turn off' : 'turn on' }} the radio
-      </div>
+        <span>{{ playing ? 'Turn off' : 'Turn on' }} radio</span>
+        <kbd class="key-hint">E</kbd>
+      </button>
     </div>
 
     <!-- ── NPC click targets ── -->
     <div class="npc-click-zone">
-      <button v-for="npc in gameState.npcs" :key="npc.id" class="npc-tap-btn" :title="`Talk to ${npc.name}`"
-        @click="openDialog(npc)">
-        💬 Talk to {{ npc.name }}
+      <button v-if="gameState.nearbyNPC && !dialogOpen" class="npc-tap-btn" :title="`Talk to ${gameState.nearbyNPC.name}`"
+        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
+        @pointerdown.stop.prevent="interact">
+        💬 Talk to {{ gameState.nearbyNPC.name }}
       </button>
       <button v-if="nearRadio && !dialogOpen" class="npc-tap-btn radio-tap-btn"
-        @click="toggleMusic">
+        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
+        @pointerdown.stop.prevent="interact">
         📻 {{ playing ? 'Turn off radio' : 'Turn on radio' }}
       </button>
     </div>
@@ -468,10 +479,21 @@ kbd {
   gap: 0.4rem;
   backdrop-filter: blur(4px);
   animation: promptPulse 1.5s ease-in-out infinite;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  min-height: 44px;
+  font-family: inherit;
 }
 
 .interaction-prompt strong {
   color: #ffe88a;
+}
+
+.key-hint {
+  margin-left: auto;
+  opacity: 0.7;
 }
 
 .prompt-icon {
@@ -510,6 +532,10 @@ kbd {
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
+  touch-action: manipulation;
+  user-select: none;
+  min-height: 44px;
+  font-family: inherit;
 }
 
 .npc-tap-btn:hover {
@@ -526,12 +552,6 @@ kbd {
 .radio-tap-btn:hover {
   background: rgba(255, 215, 0, 0.3);
   color: #ffe88a;
-}
-
-/* Touch hint text (shown alongside keyboard hints) */
-.touch-hint {
-  opacity: 0.7;
-  font-size: 0.7em;
 }
 
 /* Tap-to-move row in controls panel */
