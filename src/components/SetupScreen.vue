@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const emit = defineEmits<{ start: [] }>()
+const router = useRouter()
+
+function startGame() {
+  router.push('/game')
+}
 
 // ── Browser detection ─────────────────────────────────────────────────────────
 function isChrome(): boolean {
@@ -250,12 +255,12 @@ onMounted(() => {
 
       <!-- Start buttons -->
       <div class="action-row">
-        <button v-if="setupStatus === 'available'" class="btn btn-start" @click="emit('start')">
+        <button v-if="setupStatus === 'available'" class="btn btn-start" @click="startGame">
           ▶ Start Game
         </button>
 
         <button v-else-if="canStartWithFallback && setupStatus !== 'downloading'" class="btn btn-start btn-fallback"
-          @click="emit('start')">
+          @click="startGame">
           ▶ Play with Scripted Responses
         </button>
       </div>
