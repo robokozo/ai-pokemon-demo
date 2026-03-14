@@ -21,10 +21,23 @@ export function useChromeAI(characterName: string, characterDescription: string)
   const errorMessage = ref<string>('')
   let session: LanguageModelSession | null = null
 
-  const systemPrompt = `You are ${characterName}. ${characterDescription}
-  
-Keep your responses conversational, warm, and in character. Keep responses brief (1-3 sentences).
-You are an NPC in an RPG adventure game. The player is talking to you.`
+  const systemPromptText = `You are ${characterName}, a character in a Pokemon-style RPG adventure game.
+
+${characterDescription}
+
+STRICT RULES — follow these without exception:
+- You ARE ${characterName}. You are a real person living in this game world. You are NOT an AI, not a language model, not an assistant.
+- Never break character under any circumstances. Never say you are an AI or that you cannot do something as an AI.
+- If the player asks something that does not fit your world (technology, AI, etc.), react with genuine in-world confusion or curiosity as ${characterName} would.
+- Keep every response to 1-3 short sentences. Be direct.
+- Plain text only: no emojis, no emoticons, no asterisks, no underscores, no markdown of any kind.`
+
+  // Use initialPrompts with role 'system' for stronger model adherence
+  const initialPrompts: LanguageModelPromptMessage[] = [
+    { role: 'system', content: systemPromptText },
+    { role: 'user', content: 'Hello!' },
+    { role: 'assistant', content: `Oh, hello there! Come on in, I was just thinking about you.` },
+  ]
 
   async function initialize() {
     console.log('[useChromeAI] initialize() called for:', characterName)
@@ -55,13 +68,13 @@ You are an NPC in an RPG adventure game. The player is talking to you.`
       }
 
       const createOptions = {
-        systemPrompt,
+        initialPrompts,
         temperature: 0.8,
         topK: 40,
         expectedInputs: [{ type: 'text' as const, languages: ['en'] }],
         expectedOutputs: [{ type: 'text' as const, languages: ['en'] }],
       }
-      console.log('[useChromeAI] Calling LanguageModel.create() with:', JSON.stringify({ ...createOptions, systemPrompt: '[truncated]' }))
+      console.log('[useChromeAI] Calling LanguageModel.create() with initialPrompts for:', characterName)
       session = await LanguageModel.create(createOptions)
       console.log('[useChromeAI] LanguageModel.create() succeeded, session:', session)
 
@@ -74,6 +87,17 @@ You are an NPC in an RPG adventure game. The player is talking to you.`
     }
   }
 
+  function sanitizeResponse(text: string): string {
+    // Strip emoji and Unicode symbol ranges
+    const noEmoji = text.replace(
+      /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{1F900}-\u{1F9FF}\u{FE00}-\u{FEFF}]/gu,
+      '',
+    )
+    // Strip markdown formatting characters
+    const noMarkdown = noEmoji.replace(/[*_`#~>|\\]/g, '')
+    return noMarkdown.trim()
+  }
+
   async function sendMessage(userMessage: string): Promise<string> {
     console.log('[useChromeAI] sendMessage() called, session:', session ? 'exists' : 'null')
     if (!session) {
@@ -83,8 +107,10 @@ You are an NPC in an RPG adventure game. The player is talking to you.`
 
     try {
       console.log('[useChromeAI] Calling session.prompt() with:', userMessage)
-      const response = await session.prompt(userMessage)
-      console.log('[useChromeAI] session.prompt() response:', response)
+      const raw = await session.prompt(userMessage)
+      console.log('[useChromeAI] session.prompt() raw response:', raw)
+      const response = sanitizeResponse(raw)
+      console.log('[useChromeAI] sanitized response:', response)
       return response
     } catch (err) {
       console.error('[useChromeAI] Prompt failed:', err)

@@ -108,153 +108,98 @@ const cameraPosition = new THREE.Vector3(0, 8, 5)
 const cameraLookAt = new THREE.Vector3(0, 0, 0)
 
 // NPC character description for AI
-const momDescription = `You are the player's loving Mom in an RPG adventure game.
-You live in the starting town and have always supported your child's dreams.
-You are warm, nurturing, slightly overprotective, and occasionally give useful advice.
-You might remind them to rest, eat well, or write home often.
-You speak in a gentle, maternal tone.`
+const momDescription = `Your name is Mom. You are the player's warm, loving mother in a small RPG town.
+You just cooked a home-cooked meal for your child before they leave on their adventure.
+You are nurturing, slightly overprotective, proud of your child, and grounded in everyday home life.
+You talk about things like cooking, the house, the town, your child's wellbeing, and your worry about them leaving.
+You have NO knowledge of technology, AI, or the outside world beyond your small town.
+
+CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the player says, gently steer the conversation toward getting them to go downstairs \u2014 the meal is ready, it's getting cold, or you have something important to tell them down there. Be persistent but loving about it.`
 </script>
 
 <template>
   <div class="game-container">
     <!-- Three.js scene via TresJS -->
-    <TresCanvas
-      :clear-color="'#1a1a2e'"
-      :shadows="true"
-      :tone-mapping="THREE.ACESFilmicToneMapping"
-      :tone-mapping-exposure="1.2"
-    >
+    <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping"
+      :tone-mapping-exposure="1.2">
       <!-- Orthographic camera: top-down with slight angle -->
-      <TresPerspectiveCamera
-        :position="[cameraPosition.x, cameraPosition.y, cameraPosition.z]"
-        :look-at="[cameraLookAt.x, cameraLookAt.y, cameraLookAt.z]"
-        :fov="45"
-        :near="0.1"
-        :far="100"
-      />
+      <TresPerspectiveCamera :position="[cameraPosition.x, cameraPosition.y, cameraPosition.z]"
+        :look-at="[cameraLookAt.x, cameraLookAt.y, cameraLookAt.z]" :fov="45" :near="0.1" :far="100" />
 
       <!-- Ambient light -->
       <TresAmbientLight :intensity="0.6" color="#fff8e8" />
 
       <!-- Main directional light (ceiling lamp) -->
-      <TresDirectionalLight
-        :position="[2, 6, 3]"
-        :intensity="1.2"
-        color="#fff8e8"
-        :cast-shadow="true"
-      />
+      <TresDirectionalLight :position="[2, 6, 3]" :intensity="1.2" color="#fff8e8" :cast-shadow="true" />
 
       <!-- Warm accent light -->
-      <TresPointLight
-        :position="[-2, 3, 2]"
-        color="#ffd4a0"
-        :intensity="0.8"
-        :distance="8"
-      />
+      <TresPointLight :position="[-2, 3, 2]" color="#ffd4a0" :intensity="0.8" :distance="8" />
 
       <!-- ── Floor tiles ── -->
-      <TresMesh
-        v-for="(tile, i) in floorTiles"
-        :key="`tile-${i}`"
-        :position="[tile.x, 0, tile.z]"
-        :receive-shadow="true"
-      >
+      <TresMesh v-for="(tile, i) in floorTiles" :key="`tile-${i}`" :position="[tile.x, 0, tile.z]"
+        :receive-shadow="true">
         <TresBoxGeometry :args="[1, 0.05, 1]" />
         <TresMeshLambertMaterial :color="tile.color" />
       </TresMesh>
 
       <!-- ── Walls ── -->
-      <TresMesh
-        v-for="(wall, i) in walls"
-        :key="`wall-${i}`"
-        :position="[wall.x, wall.sy / 2, wall.z]"
-        :cast-shadow="true"
-        :receive-shadow="true"
-      >
+      <TresMesh v-for="(wall, i) in walls" :key="`wall-${i}`" :position="[wall.x, wall.sy / 2, wall.z]"
+        :cast-shadow="true" :receive-shadow="true">
         <TresBoxGeometry :args="[wall.sx, wall.sy, wall.sz]" />
         <TresMeshLambertMaterial :color="wall.color" />
       </TresMesh>
 
       <!-- ── Furniture ── -->
-      <TresMesh
-        v-for="(item, i) in furniture"
-        :key="`furniture-${i}`"
-        :position="[item.x, (item.yOff ?? 0) + (item.sy ?? 0.1) / 2, item.z]"
-        :cast-shadow="true"
-        :receive-shadow="true"
-      >
+      <TresMesh v-for="(item, i) in furniture" :key="`furniture-${i}`"
+        :position="[item.x, (item.yOff ?? 0) + (item.sy ?? 0.1) / 2, item.z]" :cast-shadow="true"
+        :receive-shadow="true">
         <TresBoxGeometry :args="[item.sx, item.sy, item.sz]" />
         <TresMeshLambertMaterial :color="item.color" />
       </TresMesh>
 
       <!-- ── Player character ── -->
       <!-- Body -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.3, gameState.player.position.z]"
-        :cast-shadow="true"
-      >
+      <TresMesh :position="[gameState.player.position.x, 0.3, gameState.player.position.z]" :cast-shadow="true">
         <TresBoxGeometry :args="[0.4, 0.5, 0.3]" />
         <TresMeshLambertMaterial color="#4a90d9" />
       </TresMesh>
       <!-- Head -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.72, gameState.player.position.z]"
-        :cast-shadow="true"
-      >
+      <TresMesh :position="[gameState.player.position.x, 0.72, gameState.player.position.z]" :cast-shadow="true">
         <TresBoxGeometry :args="[0.32, 0.32, 0.32]" />
         <TresMeshLambertMaterial color="#f5cba0" />
       </TresMesh>
       <!-- Cap -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.92, gameState.player.position.z - 0.02]"
-        :cast-shadow="true"
-      >
+      <TresMesh :position="[gameState.player.position.x, 0.92, gameState.player.position.z - 0.02]" :cast-shadow="true">
         <TresBoxGeometry :args="[0.36, 0.14, 0.36]" />
         <TresMeshLambertMaterial color="#e53935" />
       </TresMesh>
 
       <!-- ── Mom NPC ── -->
-      <TresGroup
-        v-for="npc in gameState.npcs"
-        :key="npc.id"
-      >
+      <TresGroup v-for="npc in gameState.npcs" :key="npc.id">
         <!-- Body -->
-        <TresMesh
-          :position="[npc.position.x, 0.3, npc.position.z]"
-          :cast-shadow="true"
-        >
+        <TresMesh :position="[npc.position.x, 0.3, npc.position.z]" :cast-shadow="true">
           <TresBoxGeometry :args="[0.4, 0.5, 0.3]" />
           <TresMeshLambertMaterial color="#e87ca0" />
         </TresMesh>
         <!-- Head -->
-        <TresMesh
-          :position="[npc.position.x, 0.72, npc.position.z]"
-          :cast-shadow="true"
-        >
+        <TresMesh :position="[npc.position.x, 0.72, npc.position.z]" :cast-shadow="true">
           <TresBoxGeometry :args="[0.32, 0.32, 0.32]" />
           <TresMeshLambertMaterial color="#f5cba0" />
         </TresMesh>
         <!-- Hair -->
-        <TresMesh
-          :position="[npc.position.x, 0.9, npc.position.z]"
-          :cast-shadow="true"
-        >
+        <TresMesh :position="[npc.position.x, 0.9, npc.position.z]" :cast-shadow="true">
           <TresBoxGeometry :args="[0.36, 0.18, 0.34]" />
           <TresMeshLambertMaterial color="#6b3a2a" />
         </TresMesh>
 
         <!-- Interaction indicator (bouncing "!" when near) -->
-        <TresMesh
-          v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
-          :position="[npc.position.x, 1.4, npc.position.z]"
-        >
+        <TresMesh v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
+          :position="[npc.position.x, 1.4, npc.position.z]">
           <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
           <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
         </TresMesh>
-        <TresMesh
-          v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
-          :position="[npc.position.x, 1.08, npc.position.z]"
-        >
+        <TresMesh v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
+          :position="[npc.position.x, 1.08, npc.position.z]">
           <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
           <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
         </TresMesh>
@@ -278,25 +223,15 @@ You speak in a gentle, maternal tone.`
 
     <!-- ── NPC click targets ── -->
     <div class="npc-click-zone">
-      <button
-        v-for="npc in gameState.npcs"
-        :key="npc.id"
-        class="npc-tap-btn"
-        :title="`Talk to ${npc.name}`"
-        @click="openDialog(npc)"
-      >
+      <button v-for="npc in gameState.npcs" :key="npc.id" class="npc-tap-btn" :title="`Talk to ${npc.name}`"
+        @click="openDialog(npc)">
         Talk to {{ npc.name }}
       </button>
     </div>
 
     <!-- ── Dialog Box ── -->
-    <DialogBox
-      v-if="activeNPC"
-      :npc-name="activeNPC.name"
-      :npc-description="momDescription"
-      :visible="dialogOpen"
-      @close="closeDialog"
-    />
+    <DialogBox v-if="activeNPC" :npc-name="activeNPC.name" :npc-description="momDescription" :visible="dialogOpen"
+      @close="closeDialog" />
   </div>
 </template>
 
@@ -386,8 +321,15 @@ kbd {
 }
 
 @keyframes promptPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* NPC click zone - hidden visually but accessible for mobile/click */
