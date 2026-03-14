@@ -8,6 +8,8 @@ interface AILanguageModelCreateOptions {
   temperature?: number
   topK?: number
   monitor?: (monitor: EventTarget) => void
+  expectedInputLanguages?: string[]
+  expectedOutputLanguages?: string[]
 }
 
 interface AILanguageModelPromptOptions {
