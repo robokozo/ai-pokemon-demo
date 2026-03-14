@@ -31,13 +31,24 @@ async function checkAvailability() {
   setupStatus.value = 'checking'
   statusMessage.value = 'Checking AI model availability…'
 
+  console.log('[SetupScreen] checkAvailability() started')
+  console.log('[SetupScreen] typeof LanguageModel:', typeof LanguageModel)
+  console.log('[SetupScreen] window.ai:', (window as any).ai)
+
   // Try new LanguageModel static API (Chrome 138+)
   if (typeof LanguageModel !== 'undefined') {
     try {
-      const availability = await LanguageModel.availability({ languages: ['en'] })
+      const availabilityOptions = {
+        expectedInputs: [{ type: 'text' as const, languages: ['en'] }],
+        expectedOutputs: [{ type: 'text' as const, languages: ['en'] }],
+      }
+      console.log('[SetupScreen] Calling LanguageModel.availability() with:', JSON.stringify(availabilityOptions))
+      const availability = await LanguageModel.availability(availabilityOptions)
+      console.log('[SetupScreen] LanguageModel.availability() result:', availability)
       applyNewApiStatus(availability)
       return
-    } catch {
+    } catch (err) {
+      console.warn('[SetupScreen] LanguageModel.availability() threw:', err)
       // Fall through to legacy API
     }
   }
@@ -45,15 +56,19 @@ async function checkAvailability() {
   // Try legacy window.ai API (Chrome 127+)
   if (window.ai?.languageModel) {
     try {
+      console.log('[SetupScreen] Falling back to window.ai.languageModel.capabilities()')
       const caps = await window.ai.languageModel.capabilities()
+      console.log('[SetupScreen] window.ai capabilities:', caps)
       applyLegacyApiStatus(caps.available)
       return
-    } catch {
+    } catch (err) {
+      console.warn('[SetupScreen] window.ai.languageModel.capabilities() threw:', err)
       // Fall through to unavailable
     }
   }
 
   // Neither API found
+  console.warn('[SetupScreen] No AI API found')
   setupStatus.value = 'unavailable'
   statusMessage.value =
     'Chrome AI (Gemini Nano) is not available. Enable the Prompt API flag or update Chrome.'
@@ -61,6 +76,7 @@ async function checkAvailability() {
 }
 
 function applyNewApiStatus(availability: LanguageModelAvailability) {
+  console.log('[SetupScreen] applyNewApiStatus():', availability)
   switch (availability) {
     case 'available':
       setupStatus.value = 'available'
@@ -108,9 +124,13 @@ async function triggerDownload() {
   statusMessage.value = 'Starting AI model download…'
   downloadProgress.value = 0
 
+  console.log('[SetupScreen] triggerDownload() started')
+
   try {
     if (typeof LanguageModel !== 'undefined') {
-      await LanguageModel.create({
+      const createOptions = {
+        expectedInputs: [{ type: 'text' as const, languages: ['en'] }],
+        expectedOutputs: [{ type: 'text' as const, languages: ['en'] }],
         monitor: (monitor: EventTarget) => {
           monitor.addEventListener('downloadprogress', (e: Event) => {
             const progressEvent = e as ProgressEvent
@@ -120,15 +140,20 @@ async function triggerDownload() {
             statusMessage.value = `Downloading AI model… ${downloadProgress.value}%`
           })
         },
-      })
+      }
+      console.log('[SetupScreen] Calling LanguageModel.create() with:', JSON.stringify({ ...createOptions, monitor: '[Function]' }))
+      await LanguageModel.create(createOptions)
     } else if (window.ai?.languageModel) {
+      console.log('[SetupScreen] Falling back to window.ai.languageModel.create()')
       await window.ai.languageModel.create({})
     }
 
+    console.log('[SetupScreen] triggerDownload() succeeded')
     setupStatus.value = 'available'
     statusMessage.value = 'AI model is ready!'
     downloadProgress.value = 100
   } catch (err) {
+    console.error('[SetupScreen] triggerDownload() failed:', err)
     setupStatus.value = 'error'
     statusMessage.value = err instanceof Error ? err.message : 'Download failed.'
     canStartWithFallback.value = true
@@ -165,16 +190,13 @@ onMounted(() => {
       <div class="status-panel">
         <div class="status-header">
           <span class="status-label">AI Model Status</span>
-          <span
-            class="status-badge"
-            :class="{
-              'badge-checking': setupStatus === 'checking',
-              'badge-available': setupStatus === 'available',
-              'badge-downloading': setupStatus === 'downloading',
-              'badge-downloadable': setupStatus === 'downloadable',
-              'badge-unavailable': setupStatus === 'unavailable' || setupStatus === 'error',
-            }"
-          >
+          <span class="status-badge" :class="{
+            'badge-checking': setupStatus === 'checking',
+            'badge-available': setupStatus === 'available',
+            'badge-downloading': setupStatus === 'downloading',
+            'badge-downloadable': setupStatus === 'downloadable',
+            'badge-unavailable': setupStatus === 'unavailable' || setupStatus === 'error',
+          }">
             {{
               setupStatus === 'checking'
                 ? '⏳ Checking…'
@@ -196,30 +218,19 @@ onMounted(() => {
         <!-- Download progress bar -->
         <div v-if="setupStatus === 'downloading'" class="progress-wrap">
           <div class="progress-bar">
-            <div
-              class="progress-fill"
-              :style="{ width: downloadProgress > 0 ? `${downloadProgress}%` : '40%' }"
-              :class="{ indeterminate: downloadProgress === 0 }"
-            />
+            <div class="progress-fill" :style="{ width: downloadProgress > 0 ? `${downloadProgress}%` : '40%' }"
+              :class="{ indeterminate: downloadProgress === 0 }" />
           </div>
           <span v-if="downloadProgress > 0" class="progress-pct">{{ downloadProgress }}%</span>
         </div>
 
         <!-- Download trigger -->
-        <button
-          v-if="setupStatus === 'downloadable'"
-          class="btn btn-primary"
-          @click="triggerDownload"
-        >
+        <button v-if="setupStatus === 'downloadable'" class="btn btn-primary" @click="triggerDownload">
           ⬇️ Download AI Model (~1.5 GB)
         </button>
 
         <!-- Retry -->
-        <button
-          v-if="setupStatus === 'error'"
-          class="btn btn-secondary"
-          @click="checkAvailability"
-        >
+        <button v-if="setupStatus === 'error'" class="btn btn-secondary" @click="checkAvailability">
           🔄 Retry
         </button>
 
@@ -239,26 +250,20 @@ onMounted(() => {
 
       <!-- Start buttons -->
       <div class="action-row">
-        <button
-          v-if="setupStatus === 'available'"
-          class="btn btn-start"
-          @click="emit('start')"
-        >
+        <button v-if="setupStatus === 'available'" class="btn btn-start" @click="emit('start')">
           ▶ Start Game
         </button>
 
-        <button
-          v-else-if="canStartWithFallback && setupStatus !== 'downloading'"
-          class="btn btn-start btn-fallback"
-          @click="emit('start')"
-        >
+        <button v-else-if="canStartWithFallback && setupStatus !== 'downloading'" class="btn btn-start btn-fallback"
+          @click="emit('start')">
           ▶ Play with Scripted Responses
         </button>
       </div>
 
       <!-- Footer hint -->
       <p class="footer-hint">
-        AI features require Chrome 127+ (legacy API) or Chrome 138+ (built-in LanguageModel API) with the Prompt API flag enabled.
+        AI features require Chrome 127+ (legacy API) or Chrome 138+ (built-in LanguageModel API) with the Prompt API
+        flag enabled.
       </p>
     </div>
   </div>
@@ -414,8 +419,15 @@ onMounted(() => {
 }
 
 @keyframes badge-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .status-message {
@@ -453,8 +465,13 @@ onMounted(() => {
 }
 
 @keyframes slide-indeterminate {
-  0% { transform: translateX(-150%); }
-  100% { transform: translateX(350%); }
+  0% {
+    transform: translateX(-150%);
+  }
+
+  100% {
+    transform: translateX(350%);
+  }
 }
 
 .progress-pct {
