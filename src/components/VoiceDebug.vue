@@ -1,44 +1,46 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 
-const voices = ref<SpeechSynthesisVoice[]>([])
-const selectedVoiceIndex = ref(0)
-const testText = ref('And that was Ninja Loot in Nagrand — what a track! Coming up next, get ready for Pug Life Best Life!')
-const pitch = ref(1.1)
-const rate = ref(1.0)
-const volume = ref(1.0)
-const speaking = ref(false)
+const voices = ref<SpeechSynthesisVoice[]>([]);
+const selectedVoiceIndex = ref(0);
+const testText = ref(
+  "And that was Ninja Loot in Nagrand — what a track! Coming up next, get ready for Pug Life Best Life!",
+);
+const pitch = ref(1.1);
+const rate = ref(1.0);
+const volume = ref(1.0);
+const speaking = ref(false);
 
 function loadVoices() {
-  const v = speechSynthesis.getVoices()
+  const v = speechSynthesis.getVoices();
   if (v.length) {
-    voices.value = v
+    voices.value = v;
   }
 }
 
 onMounted(() => {
-  loadVoices()
+  loadVoices();
   if (!voices.value.length) {
-    speechSynthesis.addEventListener('voiceschanged', loadVoices, { once: true })
+    speechSynthesis.addEventListener("voiceschanged", loadVoices, { once: true });
   }
-})
+});
 
 function speak() {
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(testText.value)
-  u.voice = voices.value[selectedVoiceIndex.value] ?? null
-  u.pitch = pitch.value
-  u.rate = rate.value
-  u.volume = volume.value
-  speaking.value = true
-  u.onend = () => (speaking.value = false)
-  u.onerror = () => (speaking.value = false)
-  speechSynthesis.speak(u)
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(testText.value);
+  u.voice = voices.value[selectedVoiceIndex.value] ?? null;
+  u.pitch = pitch.value;
+  u.rate = rate.value;
+  u.volume = volume.value;
+  speaking.value = true;
+  u.onend = () => (speaking.value = false);
+  u.onerror = () => (speaking.value = false);
+  speechSynthesis.speak(u);
 }
 
 function stop() {
-  speechSynthesis.cancel()
-  speaking.value = false
+  speechSynthesis.cancel();
+  speaking.value = false;
 }
 </script>
 
@@ -50,7 +52,7 @@ function stop() {
       <label>Voice ({{ voices.length }} available)</label>
       <select v-model="selectedVoiceIndex">
         <option v-for="(v, i) in voices" :key="v.name" :value="i">
-          {{ v.name }} ({{ v.lang }}){{ v.localService ? ' ✓ local' : '' }}
+          {{ v.name }} ({{ v.lang }}){{ v.localService ? " ✓ local" : "" }}
         </option>
       </select>
     </div>
@@ -77,15 +79,15 @@ function stop() {
 
     <div class="actions">
       <button @click="speak" :disabled="speaking || !voices.length">
-        {{ speaking ? 'Speaking…' : '▶ Speak' }}
+        {{ speaking ? "Speaking…" : "▶ Speak" }}
       </button>
       <button @click="stop" :disabled="!speaking">■ Stop</button>
     </div>
 
     <div v-if="voices.length" class="voice-info">
-      <strong>Selected:</strong> {{ voices[selectedVoiceIndex]?.name }}
-      &mdash; {{ voices[selectedVoiceIndex]?.lang }}
-      &mdash; {{ voices[selectedVoiceIndex]?.localService ? 'local' : 'remote' }}
+      <strong>Selected:</strong> {{ voices[selectedVoiceIndex]?.name }} &mdash;
+      {{ voices[selectedVoiceIndex]?.lang }} &mdash;
+      {{ voices[selectedVoiceIndex]?.localService ? "local" : "remote" }}
     </div>
   </div>
 </template>
@@ -140,7 +142,7 @@ textarea {
   gap: 16px;
 }
 
-input[type='range'] {
+input[type="range"] {
   width: 100%;
   accent-color: #ffd700;
 }

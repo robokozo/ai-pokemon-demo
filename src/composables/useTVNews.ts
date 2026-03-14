@@ -18,7 +18,7 @@ const NEWS_LINES = [
   'And finally a feel-good story: A young traveler was spotted helping an elderly gentleman cross the main route. They immediately walked into tall grass and were startled. They were fine.',
   'This is your two-minute warning: If you have not said goodbye to your mother yet, she is probably making a really nice meal for you right now.',
   'Authorities are advising all travelers to double-check their footwear before any cross-country trips. Blisters have reached an all-time high.',
-  'In other news, the Pokémon Center on the north side of town reports a twenty-three percent increase in visitors who, quote, thought they were ready.',
+  'In other news, the Healing Clinic on the north side of town reports a twenty-three percent increase in visitors who, quote, thought they were ready.',
 ]
 
 export function useTVNews() {

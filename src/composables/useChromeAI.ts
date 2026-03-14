@@ -21,7 +21,7 @@ export function useChromeAI(characterName: string, characterDescription: string)
   const errorMessage = ref<string>('')
   let session: LanguageModelSession | null = null
 
-  const systemPromptText = `You are ${characterName}, a character in a Pokemon-style RPG adventure game.
+  const systemPromptText = `You are ${characterName}, a character in a small-town RPG adventure game.
 
 ${characterDescription}
 
