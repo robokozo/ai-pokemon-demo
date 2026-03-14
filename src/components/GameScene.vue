@@ -4,13 +4,50 @@ import { TresCanvas } from '@tresjs/core'
 import * as THREE from 'three'
 import { useGameWorld, ROOM_WIDTH, ROOM_HEIGHT } from '../composables/useGameWorld'
 import { useTVNews } from '../composables/useTVNews'
+import { useVoice } from '../composables/useVoice'
 import DialogBox from './DialogBox.vue'
 import { useMediaControls } from '@vueuse/core'
 
 // ── Background music ──────────────────────────────────────────────────────────
+const songs = [
+  { src: `${import.meta.env.BASE_URL}music/ninja-loot-in-nagrand.mp3`, title: 'Ninja Loot in Nagrand' },
+  { src: `${import.meta.env.BASE_URL}music/pug-life-best-life.mp3`, title: 'Pug Life Best Life' },
+  { src: `${import.meta.env.BASE_URL}music/gated-community-g-code.mp3`, title: 'Gated Community G-Code' },
+  { src: `${import.meta.env.BASE_URL}music/stackoverflow-on-a-saturday-night.mp3`, title: 'Stack Overflow on a Saturday Night' },
+]
+const currentSongIndex = ref(0)
+const currentSrc = ref(songs[0].src)
+
 const audioEl = ref<HTMLAudioElement>()
-const { playing, volume } = useMediaControls(audioEl, {
-  src: `${import.meta.env.BASE_URL}music/ninja-loot-in-nagrand.mp3`,
+const { playing, volume, ended } = useMediaControls(audioEl, { src: currentSrc })
+
+const { speakText } = useVoice()
+
+async function playDJAnnouncement(justFinishedIndex: number, nextIndex: number) {
+  const justFinished = songs[justFinishedIndex].title
+  const next = songs[nextIndex].title
+  const lines = [
+    `And that was "${justFinished}" — what a track! Coming up next, get ready for "${next}"!`,
+    `Beautiful. That was "${justFinished}". Stay tuned — "${next}" is on deck!`,
+    `You're listening to the best radio in town. That was "${justFinished}", and up next: "${next}"!`,
+  ]
+  const line = lines[Math.floor(Math.random() * lines.length)]
+  await speakText(line, { pitch: 1.15, rate: 1.05 })
+}
+
+// Auto-advance to the next song when the current one finishes
+watch(ended, async (isEnded) => {
+  if (isEnded && playing.value) {
+    const prevIndex = currentSongIndex.value
+    const nextIndex = (prevIndex + 1) % songs.length
+    currentSongIndex.value = nextIndex
+
+    // DJ announcement before the next track
+    await playDJAnnouncement(prevIndex, nextIndex)
+
+    currentSrc.value = songs[nextIndex].src
+    playing.value = true
+  }
 })
 
 // ── Game world state ──────────────────────────────────────────────────────────
@@ -26,11 +63,18 @@ const nearRadio = computed(() => {
 })
 
 function toggleMusic() {
-  playing.value = !playing.value
+  if (playing.value) {
+    playing.value = false
+  } else {
+    // Cycle to next song each time the radio is turned on
+    currentSongIndex.value = (currentSongIndex.value + 1) % songs.length
+    currentSrc.value = songs[currentSongIndex.value].src
+    playing.value = true
+  }
 }
 
 // ── TV interaction ────────────────────────────────────────────────────────────
-const TV_POSITION = { x: 3.8, z: 2.5 }
+const TV_POSITION = { x: 4.86, z: 0 }
 const TV_INTERACT_DISTANCE = 2.0
 const nearTV = computed(() => {
   const dx = gameState.player.position.x - TV_POSITION.x
@@ -255,13 +299,14 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 <template>
   <div class="game-container" @pointerdown="handlePointerDown">
     <!-- Background music -->
-    <audio ref="audioEl" loop style="display: none" />
+    <audio ref="audioEl" style="display: none" />
 
     <!-- Three.js scene via TresJS -->
     <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping"
       :tone-mapping-exposure="1.2">
       <!-- Camera follows player with fixed offset -->
-      <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR" :far="CAMERA_FAR" />
+      <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR"
+        :far="CAMERA_FAR" />
 
       <!-- Ambient light -->
       <TresAmbientLight :intensity="0.6" color="#fff8e8" />
@@ -379,43 +424,41 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       </TresMesh>
 
       <!-- ── TV ── -->
-      <!-- TV stand / cabinet -->
-      <TresMesh :position="[TV_POSITION.x, 0.25, TV_POSITION.z]" :cast-shadow="true" :receive-shadow="true">
-        <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />
-        <TresMeshLambertMaterial color="#5a3e28" />
-      </TresMesh>
-      <!-- TV body (housing) -->
-      <TresMesh :position="[TV_POSITION.x, 1.0, TV_POSITION.z]" :cast-shadow="true">
-        <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />
-        <TresMeshLambertMaterial color="#1a1a1a" />
-      </TresMesh>
-      <!-- TV screen – glows when on -->
-      <TresMesh :position="[TV_POSITION.x, 1.0, TV_POSITION.z + 0.145]">
-        <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
-        <TresMeshLambertMaterial
-          :color="tvOn ? '#a8d8ff' : '#111111'"
-          :emissive="tvOn ? '#4ab0ff' : '#000000'"
-          :emissive-intensity="tvOn ? 1.2 : 0"
-        />
-      </TresMesh>
-      <!-- TV power indicator light -->
-      <TresMesh :position="[TV_POSITION.x + 0.62, 0.57, TV_POSITION.z + 0.145]">
-        <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
-        <TresMeshLambertMaterial
-          :color="tvOn ? '#00ff88' : '#1a4a2a'"
-          :emissive="tvOn ? '#00ff88' : '#000000'"
-          :emissive-intensity="tvOn ? 0.8 : 0"
-        />
-      </TresMesh>
-      <!-- Interaction indicator above TV -->
-      <TresMesh v-if="nearTV && !dialogOpen" :position="[TV_POSITION.x, 1.7, TV_POSITION.z]">
-        <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
-        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
-      </TresMesh>
-      <TresMesh v-if="nearTV && !dialogOpen" :position="[TV_POSITION.x, 1.38, TV_POSITION.z]">
-        <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
-        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
-      </TresMesh>
+      <!-- Group handles position + 90° clockwise rotation so internal coords are local -->
+      <TresGroup :position="[TV_POSITION.x, 0, TV_POSITION.z]" :rotation="[0, -Math.PI / 2, 0]">
+        <!-- TV stand / cabinet -->
+        <TresMesh :position="[0, 0.25, 0]" :cast-shadow="true" :receive-shadow="true">
+          <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />
+          <TresMeshLambertMaterial color="#5a3e28" />
+        </TresMesh>
+        <!-- TV body (housing) -->
+        <TresMesh :position="[0, 1.0, 0]" :cast-shadow="true">
+          <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />
+          <TresMeshLambertMaterial color="#1a1a1a" />
+        </TresMesh>
+        <!-- TV screen – glows when on -->
+        <TresMesh :position="[0, 1.0, 0.145]">
+          <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
+          <TresMeshLambertMaterial :color="tvOn ? '#a8d8ff' : '#111111'" :emissive="tvOn ? '#4ab0ff' : '#000000'"
+            :emissive-intensity="tvOn ? 1.2 : 0" />
+        </TresMesh>
+        <!-- TV power indicator light -->
+        <TresMesh :position="[0.62, 0.57, 0.145]">
+          <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
+          <TresMeshLambertMaterial :color="tvOn ? '#00ff88' : '#1a4a2a'" :emissive="tvOn ? '#00ff88' : '#000000'"
+            :emissive-intensity="tvOn ? 0.8 : 0" />
+        </TresMesh>
+        <!-- Interaction indicator above TV (yellow "!") –
+             positioned above TV top (y>1.45) and in front of screen (z=0.20) to avoid clipping -->
+        <TresMesh v-if="nearTV && !dialogOpen" :position="[0, 1.87, 0.20]">
+          <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
+          <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+        </TresMesh>
+        <TresMesh v-if="nearTV && !dialogOpen" :position="[0, 1.55, 0.20]">
+          <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
+          <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+        </TresMesh>
+      </TresGroup>
 
       <!-- ── Mom NPC ── -->
       <TresGroup v-for="npc in gameState.npcs" :key="npc.id">
@@ -460,22 +503,19 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       </div>
 
       <button v-if="gameState.nearbyNPC && !dialogOpen" class="interaction-prompt"
-        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="`Talk to ${gameState.nearbyNPC.name}`" @pointerdown.stop.prevent="interact">
         <span class="prompt-icon">💬</span>
         <span>Talk to <strong>{{ gameState.nearbyNPC.name }}</strong></span>
         <kbd class="key-hint">E</kbd>
       </button>
       <button v-else-if="nearRadio && !dialogOpen" class="interaction-prompt"
-        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'" @pointerdown.stop.prevent="interact">
         <span class="prompt-icon">📻</span>
         <span>{{ playing ? 'Turn off' : 'Turn on' }} radio</span>
         <kbd class="key-hint">E</kbd>
       </button>
       <button v-else-if="nearTV && !dialogOpen" class="interaction-prompt"
-        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'" @pointerdown.stop.prevent="interact">
         <span class="prompt-icon">📺</span>
         <span>{{ tvOn ? 'Turn off' : 'Turn on' }} TV</span>
         <kbd class="key-hint">E</kbd>
@@ -485,18 +525,15 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
     <!-- ── NPC click targets ── -->
     <div class="npc-click-zone">
       <button v-if="gameState.nearbyNPC && !dialogOpen" class="npc-tap-btn"
-        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="`Talk to ${gameState.nearbyNPC.name}`" @click.stop.prevent="interact">
         💬 Talk to {{ gameState.nearbyNPC.name }}
       </button>
       <button v-if="nearRadio && !dialogOpen" class="npc-tap-btn radio-tap-btn"
-        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'" @pointerdown.stop.prevent="interact">
         📻 {{ playing ? 'Turn off radio' : 'Turn on radio' }}
       </button>
       <button v-if="nearTV && !dialogOpen" class="npc-tap-btn tv-tap-btn"
-        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
-        @pointerdown.stop.prevent="interact">
+        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'" @pointerdown.stop.prevent="interact">
         📺 {{ tvOn ? 'Turn off TV' : 'Turn on TV' }}
       </button>
     </div>
