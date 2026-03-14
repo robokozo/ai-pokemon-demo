@@ -13,7 +13,7 @@ const { playing, volume } = useMediaControls(audioEl, {
 })
 
 // ── Game world state ──────────────────────────────────────────────────────────
-const { gameState, onKeyDown, onKeyUp, updatePlayer } = useGameWorld()
+const { gameState, onKeyDown, onKeyUp, updatePlayer, tapDestination, setTapDestination } = useGameWorld()
 
 // ── Radio interaction ────────────────────────────────────────────────────────
 const RADIO_POSITION = { x: -3.5, z: 0.5 }
@@ -62,6 +62,48 @@ function gameLoop() {
     updatePlayer()
   }
   animationId = requestAnimationFrame(gameLoop)
+}
+
+// ── Tap / click-to-move ───────────────────────────────────────────────────────
+// These must match the TresPerspectiveCamera props used in the template below.
+const CAMERA_FOV = 45
+const CAMERA_NEAR = 0.1
+const CAMERA_FAR = 100
+const DESTINATION_MARKER_HEIGHT = 0.04
+
+function handlePointerDown(event: PointerEvent) {
+  // Ignore while a dialog is open
+  if (dialogOpen.value) return
+  // Only handle clicks/taps directly on the WebGL canvas (not HUD or buttons)
+  if (!(event.target instanceof HTMLCanvasElement)) return
+
+  const canvas = event.target as HTMLCanvasElement
+  const rect = canvas.getBoundingClientRect()
+
+  // Convert pointer position to Normalized Device Coordinates (NDC)
+  const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  const ndcY = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+  // Reconstruct the perspective camera used by TresCanvas so we can raycast
+  const aspect = rect.width / rect.height
+  const rayCam = new THREE.PerspectiveCamera(CAMERA_FOV, aspect, CAMERA_NEAR, CAMERA_FAR)
+  const [cx, cy, cz] = cameraPosition.value
+  const [lx, ly, lz] = cameraLookAt.value
+  rayCam.position.set(cx, cy, cz)
+  rayCam.lookAt(lx, ly, lz)
+  rayCam.updateMatrixWorld()
+
+  // Cast a ray from the camera through the pointer and intersect with the floor plane
+  const raycaster = new THREE.Raycaster()
+  raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), rayCam)
+
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+  const worldPoint = new THREE.Vector3()
+  const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint)
+
+  if (hit) {
+    setTapDestination(worldPoint)
+  }
 }
 
 onMounted(() => {
@@ -154,7 +196,7 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 </script>
 
 <template>
-  <div class="game-container">
+  <div class="game-container" @pointerdown="handlePointerDown">
     <!-- Background music -->
     <audio ref="audioEl" loop style="display: none" />
 
@@ -162,7 +204,7 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
     <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping"
       :tone-mapping-exposure="1.2">
       <!-- Camera follows player with fixed offset -->
-      <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="45" :near="0.1" :far="100" />
+      <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR" :far="CAMERA_FAR" />
 
       <!-- Ambient light -->
       <TresAmbientLight :intensity="0.6" color="#fff8e8" />
@@ -210,6 +252,13 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <TresMesh :position="[gameState.player.position.x, 0.92, gameState.player.position.z - 0.02]" :cast-shadow="true">
         <TresBoxGeometry :args="[0.36, 0.14, 0.36]" />
         <TresMeshLambertMaterial color="#e53935" />
+      </TresMesh>
+
+      <!-- ── Tap-to-move destination marker ── -->
+      <TresMesh v-if="tapDestination" :position="[tapDestination.x, DESTINATION_MARKER_HEIGHT, tapDestination.z]">
+        <TresCylinderGeometry :args="[0.22, 0.22, 0.04, 16]" />
+        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.6" :transparent="true"
+          :opacity="0.75" />
       </TresMesh>
 
       <!-- ── Radio table ── -->
@@ -311,15 +360,18 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <div class="control-row"><kbd>W A S D</kbd> <span>Move</span></div>
         <div class="control-row"><kbd>Arrow Keys</kbd> <span>Move</span></div>
         <div class="control-row"><kbd>E</kbd> or <kbd>Space</kbd> <span>Talk</span></div>
+        <div class="control-row control-row--touch"><span class="touch-icon">👆</span> <span>Tap to move</span></div>
       </div>
 
       <div v-if="gameState.nearbyNPC && !dialogOpen" class="interaction-prompt">
         <span class="prompt-icon">💬</span>
-        Press <kbd>E</kbd> to talk to <strong>{{ gameState.nearbyNPC.name }}</strong>
+        Press <kbd>E</kbd><span class="touch-hint"> or tap button</span> to talk to
+        <strong>{{ gameState.nearbyNPC.name }}</strong>
       </div>
       <div v-else-if="nearRadio && !dialogOpen" class="interaction-prompt">
         <span class="prompt-icon">📻</span>
-        Press <kbd>E</kbd> to {{ playing ? 'turn off' : 'turn on' }} the radio
+        Press <kbd>E</kbd><span class="touch-hint"> or tap button</span> to
+        {{ playing ? 'turn off' : 'turn on' }} the radio
       </div>
     </div>
 
@@ -327,7 +379,11 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
     <div class="npc-click-zone">
       <button v-for="npc in gameState.npcs" :key="npc.id" class="npc-tap-btn" :title="`Talk to ${npc.name}`"
         @click="openDialog(npc)">
-        Talk to {{ npc.name }}
+        💬 Talk to {{ npc.name }}
+      </button>
+      <button v-if="nearRadio && !dialogOpen" class="npc-tap-btn radio-tap-btn"
+        @click="toggleMusic">
+        📻 {{ playing ? 'Turn off radio' : 'Turn on radio' }}
       </button>
     </div>
 
@@ -459,5 +515,27 @@ kbd {
 .npc-tap-btn:hover {
   background: rgba(232, 124, 160, 0.35);
   color: #ffb0cc;
+}
+
+.radio-tap-btn {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.5);
+  color: #ffd700;
+}
+
+.radio-tap-btn:hover {
+  background: rgba(255, 215, 0, 0.3);
+  color: #ffe88a;
+}
+
+/* Touch hint text (shown alongside keyboard hints) */
+.touch-hint {
+  opacity: 0.7;
+  font-size: 0.7em;
+}
+
+/* Tap-to-move row in controls panel */
+.control-row--touch .touch-icon {
+  font-size: 0.9rem;
 }
 </style>
