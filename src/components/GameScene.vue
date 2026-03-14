@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import * as THREE from 'three'
 import { useGameWorld, ROOM_WIDTH, ROOM_HEIGHT } from '../composables/useGameWorld'
+import { useTVNews } from '../composables/useTVNews'
 import DialogBox from './DialogBox.vue'
 import { useMediaControls } from '@vueuse/core'
 
@@ -28,6 +29,34 @@ function toggleMusic() {
   playing.value = !playing.value
 }
 
+// ── TV interaction ────────────────────────────────────────────────────────────
+const TV_POSITION = { x: 3.8, z: 2.5 }
+const TV_INTERACT_DISTANCE = 2.0
+const nearTV = computed(() => {
+  const dx = gameState.player.position.x - TV_POSITION.x
+  const dz = gameState.player.position.z - TV_POSITION.z
+  return Math.sqrt(dx * dx + dz * dz) < TV_INTERACT_DISTANCE
+})
+
+const tvOn = ref(false)
+const tvNews = useTVNews()
+const TV_INITIAL_DELAY_MS = 800
+const TV_RESUME_DELAY_MS = 4000
+let resumeTimerId: ReturnType<typeof setTimeout> | null = null
+
+function toggleTV() {
+  tvOn.value = !tvOn.value
+  if (tvOn.value) {
+    tvNews.start(TV_INITIAL_DELAY_MS)
+  } else {
+    if (resumeTimerId !== null) {
+      clearTimeout(resumeTimerId)
+      resumeTimerId = null
+    }
+    tvNews.stop()
+  }
+}
+
 // ── Interaction ───────────────────────────────────────────────────────────────
 const dialogOpen = ref(false)
 const activeNPC = ref<(typeof gameState.npcs)[0] | null>(null)
@@ -47,6 +76,8 @@ function interact() {
     openDialog(gameState.nearbyNPC)
   } else if (nearRadio.value) {
     toggleMusic()
+  } else if (nearTV.value) {
+    toggleTV()
   }
 }
 
@@ -58,6 +89,26 @@ function handleInteract(e: KeyboardEvent) {
     closeDialog()
   }
 }
+
+// ── TV speech – pause during Mom dialog, resume after ─────────────────────────
+watch(dialogOpen, (isOpen) => {
+  if (isOpen) {
+    // Dialog opened: immediately stop TV speech and cancel any pending resume
+    if (resumeTimerId !== null) {
+      clearTimeout(resumeTimerId)
+      resumeTimerId = null
+    }
+    tvNews.stop()
+  } else {
+    // Dialog closed: if TV is on, resume after a short delay
+    if (tvOn.value) {
+      resumeTimerId = setTimeout(() => {
+        resumeTimerId = null
+        if (tvOn.value) tvNews.start()
+      }, TV_RESUME_DELAY_MS)
+    }
+  }
+})
 
 // ── Animation loop ────────────────────────────────────────────────────────────
 let animationId: number | null = null
@@ -126,6 +177,8 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleInteract)
   window.removeEventListener('keyup', onKeyUp)
   if (animationId !== null) cancelAnimationFrame(animationId)
+  if (resumeTimerId !== null) clearTimeout(resumeTimerId)
+  tvNews.stop()
 })
 
 // ── Scene helpers ─────────────────────────────────────────────────────────────
@@ -326,6 +379,45 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
       </TresMesh>
 
+      <!-- ── TV ── -->
+      <!-- TV stand / cabinet -->
+      <TresMesh :position="[TV_POSITION.x, 0.25, TV_POSITION.z]" :cast-shadow="true" :receive-shadow="true">
+        <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />
+        <TresMeshLambertMaterial color="#5a3e28" />
+      </TresMesh>
+      <!-- TV body (housing) -->
+      <TresMesh :position="[TV_POSITION.x, 1.0, TV_POSITION.z]" :cast-shadow="true">
+        <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />
+        <TresMeshLambertMaterial color="#1a1a1a" />
+      </TresMesh>
+      <!-- TV screen – glows when on -->
+      <TresMesh :position="[TV_POSITION.x, 1.0, TV_POSITION.z + 0.145]">
+        <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
+        <TresMeshLambertMaterial
+          :color="tvOn ? '#a8d8ff' : '#111111'"
+          :emissive="tvOn ? '#4ab0ff' : '#000000'"
+          :emissive-intensity="tvOn ? 1.2 : 0"
+        />
+      </TresMesh>
+      <!-- TV power indicator light -->
+      <TresMesh :position="[TV_POSITION.x + 0.62, 0.57, TV_POSITION.z + 0.145]">
+        <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
+        <TresMeshLambertMaterial
+          :color="tvOn ? '#00ff88' : '#1a4a2a'"
+          :emissive="tvOn ? '#00ff88' : '#000000'"
+          :emissive-intensity="tvOn ? 0.8 : 0"
+        />
+      </TresMesh>
+      <!-- Interaction indicator above TV -->
+      <TresMesh v-if="nearTV && !dialogOpen" :position="[TV_POSITION.x, 1.7, TV_POSITION.z]">
+        <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
+        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      </TresMesh>
+      <TresMesh v-if="nearTV && !dialogOpen" :position="[TV_POSITION.x, 1.38, TV_POSITION.z]">
+        <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
+        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      </TresMesh>
+
       <!-- ── Mom NPC ── -->
       <TresGroup v-for="npc in gameState.npcs" :key="npc.id">
         <!-- Body -->
@@ -382,6 +474,13 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <span>{{ playing ? 'Turn off' : 'Turn on' }} radio</span>
         <kbd class="key-hint">E</kbd>
       </button>
+      <button v-else-if="nearTV && !dialogOpen" class="interaction-prompt"
+        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
+        @pointerdown.stop.prevent="interact">
+        <span class="prompt-icon">📺</span>
+        <span>{{ tvOn ? 'Turn off' : 'Turn on' }} TV</span>
+        <kbd class="key-hint">E</kbd>
+      </button>
     </div>
 
     <!-- ── NPC click targets ── -->
@@ -395,6 +494,11 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
         @pointerdown.stop.prevent="interact">
         📻 {{ playing ? 'Turn off radio' : 'Turn on radio' }}
+      </button>
+      <button v-if="nearTV && !dialogOpen" class="npc-tap-btn tv-tap-btn"
+        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
+        @pointerdown.stop.prevent="interact">
+        📺 {{ tvOn ? 'Turn off TV' : 'Turn on TV' }}
       </button>
     </div>
 
@@ -552,6 +656,17 @@ kbd {
 .radio-tap-btn:hover {
   background: rgba(255, 215, 0, 0.3);
   color: #ffe88a;
+}
+
+.tv-tap-btn {
+  background: rgba(74, 176, 255, 0.15);
+  border-color: rgba(74, 176, 255, 0.5);
+  color: #4ab0ff;
+}
+
+.tv-tap-btn:hover {
+  background: rgba(74, 176, 255, 0.3);
+  color: #a8d8ff;
 }
 
 /* Tap-to-move row in controls panel */
