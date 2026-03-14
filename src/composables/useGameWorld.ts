@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import * as THREE from 'three'
 
 export const TILE_SIZE = 1
@@ -45,6 +45,14 @@ export function useGameWorld() {
   const keys = reactive<Record<string, boolean>>({})
   const moveSpeed = 0.05
 
+  // Tap-to-move destination (world coordinates)
+  const tapDestination = ref<THREE.Vector3 | null>(null)
+  let stuckFrameCount = 0
+  let lastX = 0
+  let lastZ = 0
+  const STUCK_LIMIT = 30 // frames (~0.5 s at 60 fps)
+  const ARRIVE_THRESHOLD = 0.12
+
   function onKeyDown(e: KeyboardEvent) {
     keys[e.key] = true
   }
@@ -53,15 +61,63 @@ export function useGameWorld() {
     keys[e.key] = false
   }
 
+  function setTapDestination(pos: THREE.Vector3) {
+    tapDestination.value = pos.clone()
+    stuckFrameCount = 0
+  }
+
+  function clearTapDestination() {
+    tapDestination.value = null
+    stuckFrameCount = 0
+  }
+
   function updatePlayer() {
     const pos = gameState.player.position
     let dx = 0
     let dz = 0
 
-    if (keys['ArrowUp'] || keys['w'] || keys['W']) dz -= moveSpeed
-    if (keys['ArrowDown'] || keys['s'] || keys['S']) dz += moveSpeed
-    if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= moveSpeed
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += moveSpeed
+    const hasKeyInput =
+      keys['ArrowUp'] || keys['w'] || keys['W'] ||
+      keys['ArrowDown'] || keys['s'] || keys['S'] ||
+      keys['ArrowLeft'] || keys['a'] || keys['A'] ||
+      keys['ArrowRight'] || keys['d'] || keys['D']
+
+    if (hasKeyInput) {
+      // Keyboard input cancels any active tap destination
+      clearTapDestination()
+
+      if (keys['ArrowUp'] || keys['w'] || keys['W']) dz -= moveSpeed
+      if (keys['ArrowDown'] || keys['s'] || keys['S']) dz += moveSpeed
+      if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= moveSpeed
+      if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += moveSpeed
+    } else if (tapDestination.value) {
+      const dest = tapDestination.value
+      const ddx = dest.x - pos.x
+      const ddz = dest.z - pos.z
+      const dist = Math.sqrt(ddx * ddx + ddz * ddz)
+
+      if (dist < ARRIVE_THRESHOLD) {
+        // Reached destination
+        clearTapDestination()
+      } else {
+        dx = (ddx / dist) * moveSpeed
+        dz = (ddz / dist) * moveSpeed
+
+        // Stuck detection: if the player hasn't moved last frame, count up
+        if (Math.abs(pos.x - lastX) < 0.001 && Math.abs(pos.z - lastZ) < 0.001) {
+          stuckFrameCount++
+          if (stuckFrameCount >= STUCK_LIMIT) {
+            clearTapDestination()
+          }
+        } else {
+          stuckFrameCount = 0
+        }
+      }
+    }
+
+    // Record position before movement (used for stuck detection next frame)
+    lastX = pos.x
+    lastZ = pos.z
 
     const halfW = ROOM_WIDTH / 2 - 0.6
     const halfH = ROOM_HEIGHT / 2 - 0.6
@@ -103,5 +159,8 @@ export function useGameWorld() {
     onKeyDown,
     onKeyUp,
     updatePlayer,
+    tapDestination,
+    setTapDestination,
+    clearTapDestination,
   }
 }
