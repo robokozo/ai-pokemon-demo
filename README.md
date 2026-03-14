@@ -1,4 +1,4 @@
-# Vue 3 + TypeScript + Vite
+# AI Adventure Demo — Vue 3 + TypeScript + Vite
 
 🚀 **Live demo:** [https://robokozo.github.io/ai-pokemon-demo/](https://robokozo.github.io/ai-pokemon-demo/)
 

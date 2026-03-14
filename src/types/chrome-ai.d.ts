@@ -7,6 +7,7 @@ interface AILanguageModelCreateOptions {
   systemPrompt?: string
   temperature?: number
   topK?: number
+  monitor?: (monitor: EventTarget) => void
 }
 
 interface AILanguageModelPromptOptions {
@@ -41,4 +42,19 @@ interface AI {
 
 interface Window {
   ai?: AI
+}
+
+/**
+ * New Chrome built-in AI LanguageModel API (Chrome 138+)
+ * https://developer.chrome.com/docs/ai/prompt-api
+ */
+type LanguageModelAvailability = 'available' | 'downloading' | 'downloadable' | 'unavailable'
+
+interface LanguageModelAvailabilityOptions {
+  languages?: string[]
+}
+
+declare class LanguageModel {
+  static availability(options?: LanguageModelAvailabilityOptions): Promise<LanguageModelAvailability>
+  static create(options?: AILanguageModelCreateOptions): Promise<AILanguageModelSession>
 }
