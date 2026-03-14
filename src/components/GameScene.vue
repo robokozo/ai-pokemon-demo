@@ -169,7 +169,6 @@ onMounted(() => {
   gameLoop()
 
   volume.value = 0.35
-  playing.value = true
 })
 
 onUnmounted(() => {
@@ -485,7 +484,7 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 
     <!-- ── NPC click targets ── -->
     <div class="npc-click-zone">
-      <button v-if="gameState.nearbyNPC && !dialogOpen" class="npc-tap-btn" :title="`Talk to ${gameState.nearbyNPC.name}`"
+      <button v-if="gameState.nearbyNPC && !dialogOpen" class="npc-tap-btn"
         :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
         @pointerdown.stop.prevent="interact">
         💬 Talk to {{ gameState.nearbyNPC.name }}
@@ -587,6 +586,7 @@ kbd {
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
+  -webkit-touch-callout: none;
   min-height: 44px;
   font-family: inherit;
 }
@@ -638,6 +638,7 @@ kbd {
   transition: all 0.2s;
   touch-action: manipulation;
   user-select: none;
+  -webkit-touch-callout: none;
   min-height: 44px;
   font-family: inherit;
 }
