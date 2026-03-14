@@ -15,6 +15,19 @@ const { playing, volume } = useMediaControls(audioEl, {
 // ── Game world state ──────────────────────────────────────────────────────────
 const { gameState, onKeyDown, onKeyUp, updatePlayer } = useGameWorld()
 
+// ── Radio interaction ────────────────────────────────────────────────────────
+const RADIO_POSITION = { x: -3.5, z: 0.5 }
+const RADIO_INTERACT_DISTANCE = 1.8
+const nearRadio = computed(() => {
+  const dx = gameState.player.position.x - RADIO_POSITION.x
+  const dz = gameState.player.position.z - RADIO_POSITION.z
+  return Math.sqrt(dx * dx + dz * dz) < RADIO_INTERACT_DISTANCE
+})
+
+function toggleMusic() {
+  playing.value = !playing.value
+}
+
 // ── Interaction ───────────────────────────────────────────────────────────────
 const dialogOpen = ref(false)
 const activeNPC = ref<(typeof gameState.npcs)[0] | null>(null)
@@ -29,8 +42,12 @@ function closeDialog() {
 }
 
 function handleInteract(e: KeyboardEvent) {
-  if ((e.key === 'e' || e.key === 'E' || e.key === ' ') && gameState.nearbyNPC && !dialogOpen.value) {
-    openDialog(gameState.nearbyNPC)
+  if ((e.key === 'e' || e.key === 'E' || e.key === ' ') && !dialogOpen.value) {
+    if (gameState.nearbyNPC) {
+      openDialog(gameState.nearbyNPC)
+    } else if (nearRadio.value) {
+      toggleMusic()
+    }
   }
   if (e.key === 'Escape' && dialogOpen.value) {
     closeDialog()
@@ -113,9 +130,18 @@ const furniture = [
   { x: 1.5, z: -3.6, sx: 1.4, sy: 1.0, sz: 0.12, yOff: 0.5, color: '#5a4025', label: 'window-frame' },
 ]
 
-// Camera: orthographic top-down with slight tilt (isometric feel)
-const cameraPosition = new THREE.Vector3(0, 8, 5)
-const cameraLookAt = new THREE.Vector3(0, 0, 0)
+// Camera: fixed offset that follows the player
+const CAMERA_OFFSET = { x: 0, y: 8, z: 5 }
+const cameraPosition = computed<[number, number, number]>(() => [
+  gameState.player.position.x + CAMERA_OFFSET.x,
+  CAMERA_OFFSET.y,
+  gameState.player.position.z + CAMERA_OFFSET.z,
+])
+const cameraLookAt = computed<[number, number, number]>(() => [
+  gameState.player.position.x,
+  0,
+  gameState.player.position.z,
+])
 
 // NPC character description for AI
 const momDescription = `Your name is Mom. You are the player's warm, loving mother in a small RPG town.
@@ -135,9 +161,8 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
     <!-- Three.js scene via TresJS -->
     <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping"
       :tone-mapping-exposure="1.2">
-      <!-- Orthographic camera: top-down with slight angle -->
-      <TresPerspectiveCamera :position="[cameraPosition.x, cameraPosition.y, cameraPosition.z]"
-        :look-at="[cameraLookAt.x, cameraLookAt.y, cameraLookAt.z]" :fov="45" :near="0.1" :far="100" />
+      <!-- Camera follows player with fixed offset -->
+      <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="45" :near="0.1" :far="100" />
 
       <!-- Ambient light -->
       <TresAmbientLight :intensity="0.6" color="#fff8e8" />
@@ -187,6 +212,66 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <TresMeshLambertMaterial color="#e53935" />
       </TresMesh>
 
+      <!-- ── Radio table ── -->
+      <!-- Table surface -->
+      <TresMesh :position="[RADIO_POSITION.x, 0.55, RADIO_POSITION.z]" :cast-shadow="true" :receive-shadow="true">
+        <TresBoxGeometry :args="[0.9, 0.06, 0.55]" />
+        <TresMeshLambertMaterial color="#a07850" />
+      </TresMesh>
+      <!-- Table legs -->
+      <TresMesh :position="[RADIO_POSITION.x - 0.38, 0.28, RADIO_POSITION.z - 0.22]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
+        <TresMeshLambertMaterial color="#7a5830" />
+      </TresMesh>
+      <TresMesh :position="[RADIO_POSITION.x + 0.38, 0.28, RADIO_POSITION.z - 0.22]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
+        <TresMeshLambertMaterial color="#7a5830" />
+      </TresMesh>
+      <TresMesh :position="[RADIO_POSITION.x - 0.38, 0.28, RADIO_POSITION.z + 0.22]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
+        <TresMeshLambertMaterial color="#7a5830" />
+      </TresMesh>
+      <TresMesh :position="[RADIO_POSITION.x + 0.38, 0.28, RADIO_POSITION.z + 0.22]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
+        <TresMeshLambertMaterial color="#7a5830" />
+      </TresMesh>
+      <!-- Radio body -->
+      <TresMesh :position="[RADIO_POSITION.x, 0.69, RADIO_POSITION.z]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.55, 0.22, 0.28]" />
+        <TresMeshLambertMaterial color="#c0392b" />
+      </TresMesh>
+      <!-- Speaker grill -->
+      <TresMesh :position="[RADIO_POSITION.x - 0.12, 0.69, RADIO_POSITION.z + 0.145]" :cast-shadow="true">
+        <TresBoxGeometry :args="[0.26, 0.14, 0.01]" />
+        <TresMeshLambertMaterial color="#7a1a10" />
+      </TresMesh>
+      <!-- Tuning dial -->
+      <TresMesh :position="[RADIO_POSITION.x + 0.18, 0.69, RADIO_POSITION.z + 0.145]" :cast-shadow="true">
+        <TresCylinderGeometry :args="[0.04, 0.04, 0.02, 12]" />
+        <TresMeshLambertMaterial color="#f0d080" />
+      </TresMesh>
+      <!-- Power light: green when on, dark when off -->
+      <TresMesh :position="[RADIO_POSITION.x + 0.06, 0.72, RADIO_POSITION.z + 0.145]">
+        <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
+        <TresMeshLambertMaterial :color="playing ? '#00ff88' : '#1a4a2a'" :emissive="playing ? '#00ff88' : '#000000'"
+          :emissive-intensity="playing ? 0.8 : 0" />
+      </TresMesh>
+      <!-- Antenna -->
+      <TresMesh :position="[RADIO_POSITION.x + 0.22, 0.88, RADIO_POSITION.z]" :rotation="[0, 0, 0.18]"
+        :cast-shadow="true">
+        <TresCylinderGeometry :args="[0.012, 0.012, 0.36, 6]" />
+        <TresMeshLambertMaterial color="#888888" />
+      </TresMesh>
+      <!-- Interaction indicator above radio -->
+      <TresMesh v-if="nearRadio && !dialogOpen" :position="[RADIO_POSITION.x, 1.35, RADIO_POSITION.z]">
+        <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
+        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      </TresMesh>
+      <TresMesh v-if="nearRadio && !dialogOpen" :position="[RADIO_POSITION.x, 1.03, RADIO_POSITION.z]">
+        <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
+        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      </TresMesh>
+
       <!-- ── Mom NPC ── -->
       <TresGroup v-for="npc in gameState.npcs" :key="npc.id">
         <!-- Body -->
@@ -231,6 +316,10 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <div v-if="gameState.nearbyNPC && !dialogOpen" class="interaction-prompt">
         <span class="prompt-icon">💬</span>
         Press <kbd>E</kbd> to talk to <strong>{{ gameState.nearbyNPC.name }}</strong>
+      </div>
+      <div v-else-if="nearRadio && !dialogOpen" class="interaction-prompt">
+        <span class="prompt-icon">📻</span>
+        Press <kbd>E</kbd> to {{ playing ? 'turn off' : 'turn on' }} the radio
       </div>
     </div>
 
