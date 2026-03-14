@@ -48,6 +48,8 @@ You are an NPC in an RPG adventure game. The player is talking to you.`
         systemPrompt,
         temperature: 0.8,
         topK: capabilities.defaultTopK ?? 40,
+        expectedInputLanguages: ['en'],
+        expectedOutputLanguages: ['en'],
       })
 
       status.value = AI_READY
