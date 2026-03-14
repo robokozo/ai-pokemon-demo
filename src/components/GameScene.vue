@@ -4,6 +4,13 @@ import { TresCanvas } from '@tresjs/core'
 import * as THREE from 'three'
 import { useGameWorld, ROOM_WIDTH, ROOM_HEIGHT } from '../composables/useGameWorld'
 import DialogBox from './DialogBox.vue'
+import { useMediaControls } from '@vueuse/core'
+
+// ── Background music ──────────────────────────────────────────────────────────
+const audioEl = ref<HTMLAudioElement>()
+const { playing, volume } = useMediaControls(audioEl, {
+  src: `${import.meta.env.BASE_URL}music/ninja-loot-in-nagrand.mp3`,
+})
 
 // ── Game world state ──────────────────────────────────────────────────────────
 const { gameState, onKeyDown, onKeyUp, updatePlayer } = useGameWorld()
@@ -45,6 +52,9 @@ onMounted(() => {
   window.addEventListener('keydown', handleInteract)
   window.addEventListener('keyup', onKeyUp)
   gameLoop()
+
+  volume.value = 0.35
+  playing.value = true
 })
 
 onUnmounted(() => {
@@ -119,6 +129,9 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 
 <template>
   <div class="game-container">
+    <!-- Background music -->
+    <audio ref="audioEl" loop style="display: none" />
+
     <!-- Three.js scene via TresJS -->
     <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping"
       :tone-mapping-exposure="1.2">
