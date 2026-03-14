@@ -77,6 +77,20 @@ export function useVoice() {
     },
   )
 
+  // Browsers load voices asynchronously; getVoices() returns [] on first call until
+  // the 'voiceschanged' event fires. This helper waits for the list to be populated.
+  function getAvailableVoices(): Promise<SpeechSynthesisVoice[]> {
+    const voices = window.speechSynthesis.getVoices()
+    if (voices.length > 0) return Promise.resolve(voices)
+    return new Promise((resolve) => {
+      window.speechSynthesis.addEventListener(
+        'voiceschanged',
+        () => resolve(window.speechSynthesis.getVoices()),
+        { once: true },
+      )
+    })
+  }
+
   async function speakText(text: string, options?: { pitch?: number; rate?: number }): Promise<void> {
     if (!synthesisSupported.value) {
       voiceError.value = 'Speech synthesis is not supported in this browser.'
@@ -90,8 +104,8 @@ export function useVoice() {
     u.rate = options?.rate ?? 0.95
     u.volume = 1
 
-    // Pick a female voice if available
-    const voices = window.speechSynthesis.getVoices()
+    // Pick a female voice if available (await so voices are ready on first call too)
+    const voices = await getAvailableVoices()
     const femaleVoice = voices.find(
       (v) =>
         v.lang.startsWith('en') &&
