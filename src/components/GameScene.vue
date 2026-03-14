@@ -108,10 +108,10 @@ const cameraPosition = new THREE.Vector3(0, 8, 5)
 const cameraLookAt = new THREE.Vector3(0, 0, 0)
 
 // NPC character description for AI
-const momDescription = `You are the player's loving Mom in a Pokemon-style adventure game.
+const momDescription = `You are the player's loving Mom in an RPG adventure game.
 You live in the starting town and have always supported your child's dreams.
 You are warm, nurturing, slightly overprotective, and occasionally give useful advice.
-You might remind them to rest, eat well, or call home often.
+You might remind them to rest, eat well, or write home often.
 You speak in a gentle, maternal tone.`
 </script>
 
