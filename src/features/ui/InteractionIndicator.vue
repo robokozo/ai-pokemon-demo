@@ -52,12 +52,12 @@ onRender(({ elapsed }) => {
     <!-- Shaft of the "!" — trapezoid wider at top -->
     <TresMesh :position="[0, 0, 0]">
       <primitive :object="shaftGeometry" />
-      <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="2.0" />
     </TresMesh>
     <!-- Dot of the "!" -->
     <TresMesh :position="[0, -0.32, 0]">
       <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
-      <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
+      <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="2.0" />
     </TresMesh>
   </TresGroup>
 </template>

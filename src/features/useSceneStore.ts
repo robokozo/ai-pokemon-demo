@@ -30,6 +30,13 @@ export interface SceneEntity {
 
 const INTERACTION_DISTANCE = 1.8
 
+export interface SceneCamera {
+  fov: number
+  near: number
+  far: number
+  offset: { x: number; y: number; z: number }
+}
+
 export const useSceneStore = defineStore("scene", () => {
   const entities = ref<Array<SceneEntity>>([])
   const nearbyEntity = ref<SceneEntity | null>(null)
@@ -37,6 +44,11 @@ export const useSceneStore = defineStore("scene", () => {
   const paused = ref(false)
   const dialogEntity = ref<SceneEntity | null>(null)
   const dialogDescription = ref<string | null>(null)
+  const camera = ref<SceneCamera | null>(null)
+
+  function setCamera(config: SceneCamera) {
+    camera.value = config
+  }
 
   function setPaused(value: boolean) {
     paused.value = value
@@ -168,5 +180,7 @@ export const useSceneStore = defineStore("scene", () => {
     getInteractables,
     resolveDestination,
     updateNearbyEntity,
+    camera,
+    setCamera,
   }
 })

@@ -2,14 +2,15 @@
 import { computed } from "vue"
 import { TresCanvas } from "@tresjs/core"
 import { EffectComposerPmndrs, BloomPmndrs } from "@tresjs/post-processing"
-import * as THREE from "three"
 import { useSceneStore } from "../../useSceneStore"
 import Bed from "../../furniture/Bed.vue"
 import Bookshelf from "../../furniture/Bookshelf.vue"
 import Rug from "../../furniture/Rug.vue"
 import Wall from "../../furniture/Wall.vue"
+import TVStand from "../../furniture/TVStand.vue"
 import Radio from "../../props/radio/Radio.vue"
 import TV from "../../props/tv/TV.vue"
+import FlowerVase from "../../props/FlowerVase.vue"
 import MomNpc from "../../npcs/MomNpc.vue"
 import Player from "../../player/Player.vue"
 import DestinationMarker from "../../player/DestinationMarker.vue"
@@ -44,6 +45,8 @@ const CAMERA_NEAR = 0.1
 const CAMERA_FAR = 100
 const CAMERA_OFFSET = { x: 0, y: 8, z: 5 }
 
+store.setCamera({ fov: CAMERA_FOV, near: CAMERA_NEAR, far: CAMERA_FAR, offset: CAMERA_OFFSET })
+
 const cameraPosition = computed<[number, number, number]>(() => {
   const player = store.getPlayer()
   const px = player !== null ? player.position.x : 0
@@ -58,41 +61,6 @@ const cameraLookAt = computed<[number, number, number]>(() => {
   return [px, 0, pz]
 })
 
-// ── Tap / click-to-move ───────────────────────────────────────────────────────
-function handlePointerDown(event: PointerEvent) {
-  if (store.paused === true) return
-  if (!(event.target instanceof HTMLCanvasElement)) return
-
-  const canvas = event.target as HTMLCanvasElement
-  const rect = canvas.getBoundingClientRect()
-
-  const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1
-  const ndcY = -((event.clientY - rect.top) / rect.height) * 2 + 1
-
-  const aspect = rect.width / rect.height
-  const rayCam = new THREE.PerspectiveCamera(CAMERA_FOV, aspect, CAMERA_NEAR, CAMERA_FAR)
-  const [cx, cy, cz] = cameraPosition.value
-  const [lx, ly, lz] = cameraLookAt.value
-  rayCam.position.set(cx, cy, cz)
-  rayCam.lookAt(lx, ly, lz)
-  rayCam.updateMatrixWorld()
-
-  const raycaster = new THREE.Raycaster()
-  raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), rayCam)
-
-  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
-  const worldPoint = new THREE.Vector3()
-  const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint)
-
-  if (hit !== null) {
-    const player = store.getPlayer()
-    const fromX = player !== null ? player.position.x : 0
-    const fromZ = player !== null ? player.position.z : 0
-    const resolved = store.resolveDestination(fromX, fromZ, worldPoint.x, worldPoint.z)
-    store.setTapDestination({ x: resolved.x, y: 0, z: resolved.z })
-  }
-}
-
 // ── NPC descriptions ──────────────────────────────────────────────────────────
 const momDescription = `Your name is Mom. You are the player's warm, loving mother in a small RPG town.
 You just cooked a home-cooked meal for your child before they leave on their adventure.
@@ -104,8 +72,8 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 </script>
 
 <template>
-  <div class="scene-container" @pointerdown="handlePointerDown">
-    <TresCanvas :clear-color="'#1a1a2e'" :shadows="true" :tone-mapping="THREE.ACESFilmicToneMapping" :tone-mapping-exposure="1.2">
+  <div class="scene-container">
+    <TresCanvas :clear-color="'#1a1a2e'">
       <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR" :far="CAMERA_FAR" />
 
       <EffectComposerPmndrs>
@@ -116,11 +84,10 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <DestinationMarker v-if="store.tapDestination !== null" :position="[store.tapDestination.x, 0, store.tapDestination.z]" />
 
       <TresGroup>
-        <TresAmbientLight :intensity="0.6" color="#fff8e8" />
-        <TresDirectionalLight :position="[2, 6, 3]" :intensity="1.2" color="#fff8e8" :cast-shadow="true" />
-        <TresPointLight :position="[-2, 3, 2]" color="#ffd4a0" :intensity="0.8" :distance="8" />
+        <TresAmbientLight :intensity="1.5" />
+        <TresDirectionalLight :position="[2, 6, 3]" :intensity="0.4" />
 
-        <TresMesh v-for="(tile, i) in floorTiles" :key="`tile-${i}`" :position="[tile.x, 0, tile.z]" :receive-shadow="true">
+        <TresMesh v-for="(tile, i) in floorTiles" :key="`tile-${i}`" :position="[tile.x, 0, tile.z]">
           <TresBoxGeometry :args="[1, 0.05, 1]" />
           <TresMeshLambertMaterial :color="tile.color" />
         </TresMesh>
@@ -141,6 +108,11 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <TV :position="[4.86, 0, 0]" :rotation="[0, -Math.PI / 2, 0]">
           <InteractionIndicator :position="[0, 1.87, 0]" />
         </TV>
+
+        <!-- Side table with flower vase along the back wall -->
+        <TVStand id="vase-stand" name="Side Table" :position="[1.5, 0, -3.8]">
+          <FlowerVase :position="[0, 0.5, 0]" />
+        </TVStand>
 
         <MomNpc id="mom" name="Mom" is-static :description="momDescription">
           <InteractionIndicator :position="[0, 1.4, 0]" />

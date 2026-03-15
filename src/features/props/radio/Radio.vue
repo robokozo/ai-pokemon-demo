@@ -5,9 +5,10 @@ import { useRadio } from "./useRadio"
 interface Props {
   position?: [number, number, number]
   rotation?: [number, number, number]
+  castShadow?: boolean
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0] } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0], castShadow = false } = defineProps<Props>()
 
 const { radioState, toggle } = useRadio()
 
@@ -28,43 +29,43 @@ useEntity({
 <template>
   <TresGroup :position="position" :rotation="rotation">
     <!-- Table surface -->
-    <TresMesh :position="[0, 0.55, 0]" :cast-shadow="true" :receive-shadow="true">
+    <TresMesh :position="[0, 0.55, 0]" :cast-shadow="castShadow" :receive-shadow="true">
       <TresBoxGeometry :args="[0.9, 0.06, 0.55]" />
       <TresMeshLambertMaterial color="#a07850" />
     </TresMesh>
 
     <!-- Table legs -->
-    <TresMesh :position="[-0.38, 0.28, -0.22]" :cast-shadow="true">
+    <TresMesh :position="[-0.38, 0.28, -0.22]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
       <TresMeshLambertMaterial color="#7a5830" />
     </TresMesh>
-    <TresMesh :position="[0.38, 0.28, -0.22]" :cast-shadow="true">
+    <TresMesh :position="[0.38, 0.28, -0.22]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
       <TresMeshLambertMaterial color="#7a5830" />
     </TresMesh>
-    <TresMesh :position="[-0.38, 0.28, 0.22]" :cast-shadow="true">
+    <TresMesh :position="[-0.38, 0.28, 0.22]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
       <TresMeshLambertMaterial color="#7a5830" />
     </TresMesh>
-    <TresMesh :position="[0.38, 0.28, 0.22]" :cast-shadow="true">
+    <TresMesh :position="[0.38, 0.28, 0.22]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.06, 0.56, 0.06]" />
       <TresMeshLambertMaterial color="#7a5830" />
     </TresMesh>
 
     <!-- Radio body -->
-    <TresMesh :position="[0, 0.69, 0]" :cast-shadow="true">
+    <TresMesh :position="[0, 0.69, 0]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.55, 0.22, 0.28]" />
       <TresMeshLambertMaterial color="#c0392b" />
     </TresMesh>
 
     <!-- Speaker grill -->
-    <TresMesh :position="[-0.12, 0.69, 0.145]" :cast-shadow="true">
+    <TresMesh :position="[-0.12, 0.69, 0.145]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.26, 0.14, 0.01]" />
       <TresMeshLambertMaterial color="#7a1a10" />
     </TresMesh>
 
     <!-- Tuning dial -->
-    <TresMesh :position="[0.18, 0.69, 0.145]" :cast-shadow="true">
+    <TresMesh :position="[0.18, 0.69, 0.145]" :cast-shadow="castShadow">
       <TresCylinderGeometry :args="[0.04, 0.04, 0.02, 12]" />
       <TresMeshLambertMaterial color="#f0d080" />
     </TresMesh>
@@ -80,7 +81,7 @@ useEntity({
     </TresMesh>
 
     <!-- Antenna -->
-    <TresMesh :position="[0.22, 0.88, 0]" :rotation="[0, 0, 0.18]" :cast-shadow="true">
+    <TresMesh :position="[0.22, 0.88, 0]" :rotation="[0, 0, 0.18]" :cast-shadow="castShadow">
       <TresCylinderGeometry :args="[0.012, 0.012, 0.36, 6]" />
       <TresMeshLambertMaterial color="#888888" />
     </TresMesh>

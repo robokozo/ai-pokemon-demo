@@ -1,4 +1,5 @@
 import { reactive } from "vue"
+import * as THREE from "three"
 import { useEventListener } from "@vueuse/core"
 import { useSceneStore } from "./useSceneStore"
 import type { EntityPosition } from "./useSceneStore"
@@ -32,6 +33,34 @@ export function usePlayerMovement({ position, keyMap = DEFAULT_KEY_MAP }: { posi
   })
   useEventListener(window, "keyup", ({ key }: KeyboardEvent) => {
     keys[key] = false
+  })
+
+  useEventListener(window, "pointerdown", (event: PointerEvent) => {
+    if (store.paused === true) return
+    if (!(event.target instanceof HTMLCanvasElement)) return
+    const cam = store.camera
+    if (cam === null) return
+
+    const canvas = event.target as HTMLCanvasElement
+    const rect = canvas.getBoundingClientRect()
+    const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    const ndcY = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+    const rayCam = new THREE.PerspectiveCamera(cam.fov, rect.width / rect.height, cam.near, cam.far)
+    rayCam.position.set(position.x + cam.offset.x, cam.offset.y, position.z + cam.offset.z)
+    rayCam.lookAt(position.x, 0, position.z)
+    rayCam.updateMatrixWorld()
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), rayCam)
+
+    const worldPoint = new THREE.Vector3()
+    const hit = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), worldPoint)
+
+    if (hit !== null) {
+      const resolved = store.resolveDestination(position.x, position.z, worldPoint.x, worldPoint.z)
+      store.setTapDestination({ x: resolved.x, y: 0, z: resolved.z })
+    }
   })
 
   let stuckFrameCount = 0

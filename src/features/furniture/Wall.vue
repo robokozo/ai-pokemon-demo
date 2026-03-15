@@ -10,15 +10,16 @@ interface Props {
   width: number
   depth: number
   color?: string
+  castShadow?: boolean
 }
 
-const { id, name, position, width, depth, color = "#8b7355" } = defineProps<Props>()
+const { id, name, position, width, depth, color = "#8b7355", castShadow = false } = defineProps<Props>()
 
 useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
 </script>
 
 <template>
-  <TresMesh :position="[position[0], WALL_HEIGHT / 2, position[2]]" :cast-shadow="true" :receive-shadow="true">
+  <TresMesh :position="[position[0], WALL_HEIGHT / 2, position[2]]" :cast-shadow="castShadow" :receive-shadow="castShadow">
     <TresBoxGeometry :args="[width, WALL_HEIGHT, depth]" />
     <TresMeshLambertMaterial :color="color" />
   </TresMesh>

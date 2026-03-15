@@ -8,7 +8,7 @@ const { position = [0, 0, 0] } = defineProps<Props>()
 
 <template>
   <TresGroup :position="position">
-    <TresMesh :position="[0, 0.02, 0]" :receive-shadow="true">
+    <TresMesh :position="[0, 0.02, 0]">
       <TresBoxGeometry :args="[3.5, 0.02, 2.5]" />
       <TresMeshLambertMaterial color="#c94a6e" />
     </TresMesh>
