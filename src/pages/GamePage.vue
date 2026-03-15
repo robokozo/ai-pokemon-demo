@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import GameScene from "../features/GameScene.vue"
+import PlayerBedroom from "../features/scenes/player-bedroom/PlayerBedroom.vue"
 </script>
 
 <template>
-  <GameScene />
+  <PlayerBedroom />
 </template>

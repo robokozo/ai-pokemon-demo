@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
-import { useTimeoutFn } from "@vueuse/core"
 import { useTVNews } from "./useTVNews"
 import { useEntity } from "../useEntity"
 
 interface Props {
   position?: [number, number, number]
   rotation?: [number, number, number]
-  isOn?: boolean
-  dialogOpen?: boolean
+  state?: "on" | "off"
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
 
 useEntity({
   id: "tv",
@@ -29,18 +27,8 @@ const TV_INITIAL_DELAY_MS = 800
 // Inset story box + ticker: appear when a new story starts, hide after it ends
 const showInset = ref(false)
 const showTicker = ref(false)
-const TV_RESUME_DELAY_MS = 4000
 
 const tvNews = useTVNews()
-const { start: startResumeTimer, stop: stopResumeTimer } = useTimeoutFn(
-  () => {
-    if (isOn === true) {
-      tvNews.start()
-    }
-  },
-  TV_RESUME_DELAY_MS,
-  { immediate: false },
-)
 
 tvNews.onStoryStart(() => {
   showInset.value = true
@@ -54,28 +42,12 @@ tvNews.onStoryEnd(() => {
 
 // Start/stop the news broadcast when the TV is switched on/off
 watch(
-  () => isOn,
-  (nowOn) => {
-    if (nowOn === true) {
+  () => state,
+  (nowState) => {
+    if (nowState === "on") {
       tvNews.start(TV_INITIAL_DELAY_MS)
     } else {
-      stopResumeTimer()
       tvNews.stop()
-    }
-  },
-)
-
-// Pause speech while a dialog is open; resume after it closes
-watch(
-  () => dialogOpen,
-  (isOpen) => {
-    if (isOpen === true) {
-      stopResumeTimer()
-      tvNews.stop()
-    } else {
-      if (isOn === true) {
-        startResumeTimer()
-      }
     }
   },
 )
@@ -97,25 +69,25 @@ watch(
     <TresMesh :position="[0, 1.0, 0.145]">
       <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
       <TresMeshStandardMaterial
-        :color="isOn === true ? '#a8d8ff' : '#111111'"
-        :emissive="isOn === true ? '#a8d8ff' : '#000000'"
-        :emissive-intensity="isOn === true ? 2.2 : 0"
+        :color="state === 'on' ? '#a8d8ff' : '#111111'"
+        :emissive="state === 'on' ? '#a8d8ff' : '#000000'"
+        :emissive-intensity="state === 'on' ? 2.2 : 0"
       />
     </TresMesh>
     <!-- Power indicator light -->
     <TresMesh :position="[0.62, 0.57, 0.145]">
       <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
       <TresMeshLambertMaterial
-        :color="isOn === true ? '#00ff88' : '#1a4a2a'"
-        :emissive="isOn === true ? '#00ff88' : '#000000'"
-        :emissive-intensity="isOn === true ? 0.8 : 0"
+        :color="state === 'on' ? '#00ff88' : '#1a4a2a'"
+        :emissive="state === 'on' ? '#00ff88' : '#000000'"
+        :emissive-intensity="state === 'on' ? 0.8 : 0"
       />
     </TresMesh>
 
     <!-- ── Broadcast overlay (visible only when on) ── -->
     <!-- All elements sit at z=0.156, just in front of the screen face (z=0.15).
          Screen spans x: -0.575→0.575, y: 0.675→1.325. -->
-    <TresGroup v-if="isOn === true">
+    <TresGroup v-if="state === 'on'">
       <!-- Anchor figure — right half of screen -->
       <!-- Hair — top cap (dark brown) -->
       <TresMesh :position="[0.22, 1.245, 0.156]">
