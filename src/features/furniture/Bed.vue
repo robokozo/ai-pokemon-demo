@@ -2,12 +2,14 @@
 import { useEntity } from "../useEntity"
 
 interface Props {
+  id?: string
+  name?: string
   position?: [number, number, number]
 }
 
-const { position = [0, 0, 0] } = defineProps<Props>()
+const { id, name, position = [0, 0, 0] } = defineProps<Props>()
 
-useEntity({ id: "bed", name: "Bed", kind: "prop", collider: "solid", colliderSize: { hw: 0.9, hd: 1.2 }, isStatic: true, position })
+useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: 0.9, hd: 1.2 }, isStatic: true, position })
 </script>
 
 <template>

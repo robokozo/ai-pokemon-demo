@@ -6,13 +6,15 @@ import { useControls } from "../useControls"
 import { usePlayerMovement } from "../usePlayerMovement"
 
 interface Props {
+  id?: string
+  name?: string
   initialPosition?: [number, number, number]
   controlsOverride?: ReturnType<typeof useControls>
 }
 
-const { initialPosition = [0, 0, 1], controlsOverride } = defineProps<Props>()
+const { id, name, initialPosition = [0, 0, 1], controlsOverride } = defineProps<Props>()
 
-const { position } = useEntity({ id: "player", name: "Player", kind: "player", collider: "solid", position: initialPosition })
+const { position } = useEntity({ id, name, kind: "player", collider: "solid", position: initialPosition })
 
 const controls = controlsOverride !== undefined ? controlsOverride : useControls()
 const movement = usePlayerMovement({ controls, position })

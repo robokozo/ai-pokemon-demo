@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import Bed from "../../furniture/Bed.vue"
 import Bookshelf from "../../furniture/Bookshelf.vue"
-import Table from "../../furniture/Table.vue"
 import Rug from "../../furniture/Rug.vue"
-import Window from "../../furniture/Window.vue"
 import Wall from "../../furniture/Wall.vue"
 
 const ROOM_WIDTH = 10
@@ -50,9 +48,7 @@ for (let x = 0; x < ROOM_WIDTH; x++) {
     <!-- Furniture -->
     <Bed :position="[3.5, 0, -2.8]" />
     <Bookshelf :position="[-3.8, 0, -2.5]" />
-    <Table :position="[-3.5, 0, 1.5]" />
     <Rug :position="[0, 0, 0.5]" />
-    <Window :position="[1.5, 0, -3.6]" />
 
     <!-- Interactive objects + NPCs passed in from GameScene -->
     <slot />

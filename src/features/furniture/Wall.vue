@@ -4,16 +4,17 @@ import { useEntity } from "../useEntity"
 const WALL_HEIGHT = 0.75
 
 interface Props {
-  id: string
+  id?: string
+  name?: string
   position: [number, number, number]
   width: number
   depth: number
   color?: string
 }
 
-const { id, position, width, depth, color = "#8b7355" } = defineProps<Props>()
+const { id, name, position, width, depth, color = "#8b7355" } = defineProps<Props>()
 
-useEntity({ id, name: "Wall", kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
+useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
 </script>
 
 <template>

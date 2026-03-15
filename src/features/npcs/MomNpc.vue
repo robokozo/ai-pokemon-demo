@@ -2,13 +2,15 @@
 import { useEntity } from "../useEntity"
 
 interface Props {
+  id?: string
+  name?: string
   position?: [number, number, number]
   isStatic?: true
 }
 
-const { position = [-1.5, 0, -1.5], isStatic } = defineProps<Props>()
+const { id, name, position = [-1.5, 0, -1.5], isStatic } = defineProps<Props>()
 
-const { position: entityPosition } = useEntity({ id: "mom", name: "Mom", kind: "npc", collider: "solid", interactive: true, isStatic, position })
+const { position: entityPosition } = useEntity({ id, name, kind: "npc", collider: "solid", interactive: true, isStatic, position })
 </script>
 
 <template>

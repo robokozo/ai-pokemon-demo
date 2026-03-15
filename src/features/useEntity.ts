@@ -5,7 +5,7 @@ let entityCount = 0
 
 interface EntityConfig {
   id?: string
-  name: string
+  name?: string
   kind: EntityKind
   collider: ColliderType
   colliderSize?: { hw: number; hd: number }
@@ -14,16 +14,9 @@ interface EntityConfig {
   position: [number, number, number]
 }
 
-export function useEntity({
-  id = `entity-${++entityCount}`,
-  name,
-  kind,
-  collider,
-  colliderSize,
-  interactive,
-  isStatic,
-  position,
-}: EntityConfig): SceneEntity {
+export function useEntity({ id: idProp, name: nameProp, kind, collider, colliderSize, interactive, isStatic, position }: EntityConfig): SceneEntity {
+  const id = idProp ?? `entity-${++entityCount}`
+  const name = nameProp ?? id ?? `Entity ${entityCount}`
   const store = useSceneStore()
 
   const entityPosition: EntityPosition =
