@@ -29,6 +29,14 @@ const songs = [
     src: `${import.meta.env.BASE_URL}music/stackoverflow-on-a-saturday-night.mp3`,
     title: "Stack Overflow on a Saturday Night",
   },
+  {
+    src: `${import.meta.env.BASE_URL}music/pug-on-patrol.mp3`,
+    title: "Pug on Patrol",
+  },
+  {
+    src: `${import.meta.env.BASE_URL}music/the-grooming-routine.mp3`,
+    title: "The Grooming Routine",
+  },
 ];
 
 // Fisher-Yates shuffle so the playlist order is different every session
