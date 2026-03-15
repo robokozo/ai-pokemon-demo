@@ -52,7 +52,7 @@ const currentSrc = ref(songs[0].src)
 const radioEnabled = ref(false)
 
 const audioEl = ref<HTMLAudioElement>()
-const { playing, volume, ended } = useMediaControls(audioEl, { src: currentSrc })
+const { playing, volume, ended, currentTime, duration } = useMediaControls(audioEl, { src: currentSrc })
 
 const { speakText } = useVoice()
 
@@ -105,6 +105,17 @@ function toggleMusic() {
     currentSrc.value = songs[currentSongIndex.value].src
     radioEnabled.value = true
     playing.value = true
+    // Seek to a random point in the first 80% of the track once metadata loads
+    const el = audioEl.value
+    if (el !== undefined) {
+      const onMeta = () => {
+        if (duration.value > 0) {
+          currentTime.value = Math.random() * duration.value * 0.8
+        }
+        el.removeEventListener("loadedmetadata", onMeta)
+      }
+      el.addEventListener("loadedmetadata", onMeta)
+    }
   }
 }
 
