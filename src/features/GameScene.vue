@@ -2,7 +2,10 @@
 import { ref, onMounted, onUnmounted, computed, watch } from "vue"
 import { TresCanvas } from "@tresjs/core"
 import * as THREE from "three"
-import { useGameWorld } from "./useGameWorld"
+import { useSceneStore } from "./useSceneStore"
+import type { SceneEntity } from "./useSceneStore"
+import { useControls } from "./useControls"
+import { usePlayerMovement } from "./usePlayerMovement"
 import { useVoice } from "./useVoice"
 import DialogBox from "./ui/DialogBox.vue"
 import InteractionIndicator from "./ui/InteractionIndicator.vue"
@@ -84,17 +87,11 @@ watch(ended, async (isEnded) => {
 })
 
 // ── Game world state ──────────────────────────────────────────────────────────
-const { gameState, onKeyDown, onKeyUp, updatePlayer, tapDestination, setTapDestination } = useGameWorld()
+const store = useSceneStore()
+const controls = useControls()
+const movement = usePlayerMovement({ controls })
 
 // ── Radio interaction ────────────────────────────────────────────────────────
-const RADIO_POSITION = { x: -3.5, z: 0.5 }
-const RADIO_INTERACT_DISTANCE = 1.8
-const nearRadio = computed(() => {
-  const dx = gameState.player.position.x - RADIO_POSITION.x
-  const dz = gameState.player.position.z - RADIO_POSITION.z
-  return Math.sqrt(dx * dx + dz * dz) < RADIO_INTERACT_DISTANCE
-})
-
 function toggleMusic() {
   if (radioEnabled.value === true) {
     radioEnabled.value = false
@@ -120,14 +117,6 @@ function toggleMusic() {
 }
 
 // ── TV interaction ────────────────────────────────────────────────────────────
-const TV_POSITION = { x: 4.86, z: 0 }
-const TV_INTERACT_DISTANCE = 2.0
-const nearTV = computed(() => {
-  const dx = gameState.player.position.x - TV_POSITION.x
-  const dz = gameState.player.position.z - TV_POSITION.z
-  return Math.sqrt(dx * dx + dz * dz) < TV_INTERACT_DISTANCE
-})
-
 const tvOn = ref(false)
 const controlsOpen = ref(false)
 
@@ -137,9 +126,9 @@ function toggleTV() {
 
 // ── Interaction ───────────────────────────────────────────────────────────────
 const dialogOpen = ref(false)
-const activeNPC = ref<(typeof gameState.npcs)[0] | null>(null)
+const activeNPC = ref<SceneEntity | null>(null)
 
-function openDialog(npc: (typeof gameState.npcs)[0]) {
+function openDialog(npc: SceneEntity) {
   activeNPC.value = npc
   dialogOpen.value = true
 }
@@ -150,11 +139,13 @@ function closeDialog() {
 
 function interact() {
   if (dialogOpen.value === true) return
-  if (gameState.nearbyNPC !== null) {
-    openDialog(gameState.nearbyNPC)
-  } else if (nearRadio.value === true) {
+  const entity = store.nearbyEntity
+  if (entity === null) return
+  if (entity.kind === "npc") {
+    openDialog(entity)
+  } else if (entity.id === "radio") {
     toggleMusic()
-  } else if (nearTV.value === true) {
+  } else if (entity.id === "tv") {
     toggleTV()
   }
 }
@@ -173,7 +164,7 @@ let animationId: number | null = null
 
 function gameLoop() {
   if (dialogOpen.value !== true) {
-    updatePlayer()
+    movement.tick()
   }
   animationId = requestAnimationFrame(gameLoop)
 }
@@ -215,12 +206,12 @@ function handlePointerDown(event: PointerEvent) {
   const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint)
 
   if (hit !== null) {
-    setTapDestination(worldPoint)
+    store.setTapDestination(worldPoint)
   }
 }
 
-const boundOnKeyDown = (e: KeyboardEvent) => onKeyDown(e)
-const boundOnKeyUp = (e: KeyboardEvent) => onKeyUp(e)
+const boundOnKeyDown = (e: KeyboardEvent) => controls.onKeyDown(e)
+const boundOnKeyUp = (e: KeyboardEvent) => controls.onKeyUp(e)
 const boundHandleInteract = (e: KeyboardEvent) => handleInteract(e)
 
 onMounted(() => {
@@ -241,12 +232,18 @@ onUnmounted(() => {
 
 // Camera: fixed offset that follows the player
 const CAMERA_OFFSET = { x: 0, y: 8, z: 5 }
-const cameraPosition = computed<[number, number, number]>(() => [
-  gameState.player.position.x + CAMERA_OFFSET.x,
-  CAMERA_OFFSET.y,
-  gameState.player.position.z + CAMERA_OFFSET.z,
-])
-const cameraLookAt = computed<[number, number, number]>(() => [gameState.player.position.x, 0, gameState.player.position.z])
+const cameraPosition = computed<[number, number, number]>(() => {
+  const player = store.getPlayer()
+  const px = player !== null ? player.position.x : 0
+  const pz = player !== null ? player.position.z : 0
+  return [px + CAMERA_OFFSET.x, CAMERA_OFFSET.y, pz + CAMERA_OFFSET.z]
+})
+const cameraLookAt = computed<[number, number, number]>(() => {
+  const player = store.getPlayer()
+  const px = player !== null ? player.position.x : 0
+  const pz = player !== null ? player.position.z : 0
+  return [px, 0, pz]
+})
 
 // NPC character description for AI
 const momDescription = `Your name is Mom. You are the player's warm, loving mother in a small RPG town.
@@ -269,26 +266,26 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR" :far="CAMERA_FAR" />
 
       <!-- ── Player character ── -->
-      <Player :position="[gameState.player.position.x, 0, gameState.player.position.z]" />
+      <Player />
 
       <!-- ── Tap-to-move destination marker ── -->
-      <DestinationMarker v-if="tapDestination !== null" :position="[tapDestination.x, 0, tapDestination.z]" />
+      <DestinationMarker v-if="store.tapDestination !== null" :position="[store.tapDestination.x, 0, store.tapDestination.z]" />
 
       <!-- ── Room: floor, walls, furniture, and interactable objects ── -->
       <PlayerBedroom>
         <!-- Radio -->
-        <Radio :position="[RADIO_POSITION.x, 0, RADIO_POSITION.z]" :state="radioEnabled === true ? 'on' : 'off'">
-          <InteractionIndicator v-if="nearRadio === true && dialogOpen !== true" :position="[0, 1.35, 0]" />
+        <Radio :initial-position="[-3.5, 0, 0.5]" :state="radioEnabled === true ? 'on' : 'off'">
+          <InteractionIndicator v-if="store.nearbyEntity?.id === 'radio' && dialogOpen !== true" :position="[0, 1.35, 0]" />
         </Radio>
 
         <!-- TV -->
-        <TV :position="[TV_POSITION.x, 0, TV_POSITION.z]" :rotation="[0, -Math.PI / 2, 0]" :is-on="tvOn" :dialog-open="dialogOpen">
-          <InteractionIndicator v-if="nearTV === true && dialogOpen !== true" :position="[0, 1.87, 0]" />
+        <TV :initial-position="[4.86, 0, 0]" :rotation="[0, -Math.PI / 2, 0]" :is-on="tvOn" :dialog-open="dialogOpen">
+          <InteractionIndicator v-if="store.nearbyEntity?.id === 'tv' && dialogOpen !== true" :position="[0, 1.87, 0]" />
         </TV>
 
         <!-- Mom NPC -->
-        <MomNpc v-for="npc in gameState.npcs" :key="npc.id" :position="[npc.position.x, 0, npc.position.z]">
-          <InteractionIndicator v-if="gameState.nearbyNPC?.id === npc.id && dialogOpen !== true" :position="[0, 1.4, 0]" />
+        <MomNpc>
+          <InteractionIndicator v-if="store.nearbyEntity?.id === 'mom' && dialogOpen !== true" :position="[0, 1.4, 0]" />
         </MomNpc>
       </PlayerBedroom>
     </TresCanvas>
@@ -314,24 +311,24 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       </div>
 
       <!-- Actions — shown when near an interactable and no dialog is open -->
-      <div v-if="dialogOpen !== true && (gameState.nearbyNPC !== null || nearRadio === true || nearTV === true)" class="hud-panel">
+      <div v-if="dialogOpen !== true && store.nearbyEntity !== null" class="hud-panel">
         <div class="hud-panel-header">
           <span class="panel-title">Actions</span>
         </div>
         <div class="hud-panel-body">
           <button
-            v-if="gameState.nearbyNPC !== null"
+            v-if="store.nearbyEntity.kind === 'npc'"
             class="hud-action"
-            :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
+            :aria-label="`Talk to ${store.nearbyEntity.name}`"
             @pointerdown.stop.prevent="interact"
           >
             <span>💬</span>
             <span
-              >Talk to <strong>{{ gameState.nearbyNPC.name }}</strong></span
+              >Talk to <strong>{{ store.nearbyEntity.name }}</strong></span
             >
           </button>
           <button
-            v-if="nearRadio === true"
+            v-if="store.nearbyEntity.id === 'radio'"
             class="hud-action"
             :aria-label="radioEnabled === true ? 'Turn off radio' : 'Turn on radio'"
             @pointerdown.stop.prevent="interact"
@@ -340,7 +337,7 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
             <span>{{ radioEnabled === true ? "Turn off" : "Turn on" }} radio</span>
           </button>
           <button
-            v-if="nearTV === true"
+            v-if="store.nearbyEntity.id === 'tv'"
             class="hud-action"
             :aria-label="tvOn === true ? 'Turn off TV' : 'Turn on TV'"
             @pointerdown.stop.prevent="interact"

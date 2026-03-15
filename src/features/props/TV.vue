@@ -1,17 +1,29 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue"
+import { ref, computed, watch, shallowReactive, onMounted, onUnmounted } from "vue"
 import { useLoop } from "@tresjs/core"
 import { useTimeoutFn } from "@vueuse/core"
 import { useTVNews } from "./useTVNews"
+import { useSceneStore } from "../useSceneStore"
 
 interface Props {
-  position?: [number, number, number]
+  initialPosition?: [number, number, number]
   rotation?: [number, number, number]
   isOn?: boolean
   dialogOpen?: boolean
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
+const { initialPosition = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
+
+const store = useSceneStore()
+const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
+const entity = { id: "tv", name: "TV", kind: "prop" as const, position }
+
+onMounted(() => {
+  store.register(entity)
+})
+onUnmounted(() => {
+  store.unregister({ id: "tv" })
+})
 
 const TV_INITIAL_DELAY_MS = 800
 
@@ -91,7 +103,7 @@ watch(
 </script>
 
 <template>
-  <TresGroup :position="position" :rotation="rotation">
+  <TresGroup :position="[position.x, position.y, position.z]" :rotation="rotation">
     <!-- Stand / cabinet -->
     <TresMesh :position="[0, 0.25, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />

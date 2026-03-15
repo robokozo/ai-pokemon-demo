@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { shallowReactive, onMounted, onUnmounted } from "vue"
+import { useSceneStore } from "../useSceneStore"
+
 interface Props {
-  position?: [number, number, number]
+  initialPosition?: [number, number, number]
   rotation?: [number, number, number]
   state?: "on" | "off"
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
+const { initialPosition = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
+
+const store = useSceneStore()
+const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
+const entity = { id: "radio", name: "Radio", kind: "prop" as const, position }
+
+onMounted(() => {
+  store.register(entity)
+})
+onUnmounted(() => {
+  store.unregister({ id: "radio" })
+})
 </script>
 
 <template>
-  <TresGroup :position="position" :rotation="rotation">
+  <TresGroup :position="[position.x, position.y, position.z]" :rotation="rotation">
     <!-- Table surface -->
     <TresMesh :position="[0, 0.55, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[0.9, 0.06, 0.55]" />

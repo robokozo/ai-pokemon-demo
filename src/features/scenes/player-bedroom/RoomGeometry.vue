@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ROOM_WIDTH, ROOM_HEIGHT } from "../../useGameWorld"
+import { ROOM_WIDTH, ROOM_HEIGHT } from "../../usePlayerMovement"
 
 interface Tile {
   x: number
