@@ -112,6 +112,7 @@ const nearTV = computed(() => {
 });
 
 const tvOn = ref(false);
+const controlsOpen = ref(false);
 
 function toggleTV() {
   tvOn.value = !tvOn.value;
@@ -142,9 +143,6 @@ function interact() {
 }
 
 function handleInteract(e: KeyboardEvent) {
-  if ((e.key === "e" || e.key === "E" || e.key === " ") && dialogOpen.value !== true) {
-    interact();
-  }
   if (e.key === "Escape" && dialogOpen.value === true) {
     closeDialog();
   }
@@ -542,76 +540,69 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 
     <!-- ── HUD overlay ── -->
     <div class="hud">
-      <div class="hud-controls">
-        <div class="controls-title">Controls</div>
-        <div class="control-row"><kbd>W A S D</kbd> <span>Move</span></div>
-        <div class="control-row"><kbd>Arrow Keys</kbd> <span>Move</span></div>
-        <div class="control-row"><kbd>E</kbd> or <kbd>Space</kbd> <span>Talk</span></div>
-        <div class="control-row control-row--touch">
-          <span class="touch-icon">👆</span> <span>Tap to move</span>
+      <!-- Controls — collapsible, collapsed by default -->
+      <div class="hud-panel">
+        <button
+          class="hud-panel-toggle"
+          :aria-expanded="controlsOpen"
+          aria-controls="hud-controls-body"
+          @pointerdown.stop.prevent="controlsOpen = !controlsOpen"
+        >
+          <span class="panel-title">Controls</span>
+          <span class="panel-chevron">{{ controlsOpen === true ? "▲" : "▼" }}</span>
+        </button>
+        <div v-if="controlsOpen === true" id="hud-controls-body" class="hud-panel-body">
+          <div class="control-row"><kbd>W A S D</kbd> <span>Move</span></div>
+          <div class="control-row"><kbd>Arrow Keys</kbd> <span>Move</span></div>
+          <div class="control-row control-row--touch">
+            <span class="touch-icon">👆</span> <span>Tap to move</span>
+          </div>
         </div>
       </div>
 
-      <button
-        v-if="gameState.nearbyNPC && !dialogOpen"
-        class="interaction-prompt"
-        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
-        @pointerdown.stop.prevent="interact"
+      <!-- Actions — shown when near an interactable and no dialog is open -->
+      <div
+        v-if="
+          dialogOpen !== true &&
+          (gameState.nearbyNPC !== null || nearRadio === true || nearTV === true)
+        "
+        class="hud-panel"
       >
-        <span class="prompt-icon">💬</span>
-        <span
-          >Talk to <strong>{{ gameState.nearbyNPC.name }}</strong></span
-        >
-        <kbd class="key-hint">E</kbd>
-      </button>
-      <button
-        v-else-if="nearRadio && !dialogOpen"
-        class="interaction-prompt"
-        :aria-label="radioEnabled ? 'Turn off radio' : 'Turn on radio'"
-        @pointerdown.stop.prevent="interact"
-      >
-        <span class="prompt-icon">📻</span>
-        <span>{{ radioEnabled ? "Turn off" : "Turn on" }} radio</span>
-        <kbd class="key-hint">E</kbd>
-      </button>
-      <button
-        v-else-if="nearTV && !dialogOpen"
-        class="interaction-prompt"
-        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
-        @pointerdown.stop.prevent="interact"
-      >
-        <span class="prompt-icon">📺</span>
-        <span>{{ tvOn ? "Turn off" : "Turn on" }} TV</span>
-        <kbd class="key-hint">E</kbd>
-      </button>
-    </div>
-
-    <!-- ── NPC click targets ── -->
-    <div class="npc-click-zone">
-      <button
-        v-if="gameState.nearbyNPC && !dialogOpen"
-        class="npc-tap-btn"
-        :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
-        @click.stop.prevent="interact"
-      >
-        💬 Talk to {{ gameState.nearbyNPC.name }}
-      </button>
-      <button
-        v-if="nearRadio && !dialogOpen"
-        class="npc-tap-btn radio-tap-btn"
-        :aria-label="radioEnabled ? 'Turn off radio' : 'Turn on radio'"
-        @pointerdown.stop.prevent="interact"
-      >
-        📻 {{ radioEnabled ? "Turn off radio" : "Turn on radio" }}
-      </button>
-      <button
-        v-if="nearTV && !dialogOpen"
-        class="npc-tap-btn tv-tap-btn"
-        :aria-label="tvOn ? 'Turn off TV' : 'Turn on TV'"
-        @pointerdown.stop.prevent="interact"
-      >
-        📺 {{ tvOn ? "Turn off TV" : "Turn on TV" }}
-      </button>
+        <div class="hud-panel-header">
+          <span class="panel-title">Actions</span>
+        </div>
+        <div class="hud-panel-body">
+          <button
+            v-if="gameState.nearbyNPC !== null"
+            class="hud-action"
+            :aria-label="`Talk to ${gameState.nearbyNPC.name}`"
+            @pointerdown.stop.prevent="interact"
+          >
+            <span>💬</span>
+            <span
+              >Talk to <strong>{{ gameState.nearbyNPC.name }}</strong></span
+            >
+          </button>
+          <button
+            v-if="nearRadio === true"
+            class="hud-action"
+            :aria-label="radioEnabled === true ? 'Turn off radio' : 'Turn on radio'"
+            @pointerdown.stop.prevent="interact"
+          >
+            <span>📻</span>
+            <span>{{ radioEnabled === true ? "Turn off" : "Turn on" }} radio</span>
+          </button>
+          <button
+            v-if="nearTV === true"
+            class="hud-action"
+            :aria-label="tvOn === true ? 'Turn off TV' : 'Turn on TV'"
+            @pointerdown.stop.prevent="interact"
+          >
+            <span>📺</span>
+            <span>{{ tvOn === true ? "Turn off" : "Turn on" }} TV</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ── Dialog Box ── -->
@@ -641,9 +632,56 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
   left: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   pointer-events: none;
   z-index: 10;
+}
+
+.hud-panel {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(74, 144, 217, 0.3);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.hud-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.45rem 0.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+  font-family: inherit;
+}
+
+.hud-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.8rem 0.2rem;
+}
+
+.panel-title {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 0.55rem;
+  color: #4a90d9;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.panel-chevron {
+  font-size: 0.5rem;
+  color: rgba(74, 144, 217, 0.7);
+}
+
+.hud-panel-body {
+  padding: 0 0.8rem 0.6rem;
 }
 
 .hud-controls {
@@ -689,33 +727,41 @@ kbd {
 }
 
 .interaction-prompt {
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid #ffd700;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  color: #ffd700;
+  display: none;
+}
+
+.hud-action {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  backdrop-filter: blur(4px);
-  animation: promptPulse 1.5s ease-in-out infinite;
-  pointer-events: auto;
+  width: 100%;
+  margin-top: 0.3rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.7rem;
+  color: #ffd700;
   cursor: pointer;
+  pointer-events: auto;
   touch-action: manipulation;
   user-select: none;
   -webkit-touch-callout: none;
-  min-height: 44px;
+  min-height: 36px;
   font-family: inherit;
+  animation: promptPulse 1.5s ease-in-out infinite;
 }
 
-.interaction-prompt strong {
+.hud-action strong {
   color: #ffe88a;
 }
 
+.hud-action:hover {
+  background: rgba(255, 215, 0, 0.22);
+}
+
 .key-hint {
-  margin-left: auto;
-  opacity: 0.7;
+  display: none;
 }
 
 .prompt-icon {
@@ -731,60 +777,6 @@ kbd {
   50% {
     opacity: 0.7;
   }
-}
-
-/* NPC click zone - hidden visually but accessible for mobile/click */
-.npc-click-zone {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 10;
-}
-
-.npc-tap-btn {
-  background: rgba(232, 124, 160, 0.2);
-  border: 1px solid rgba(232, 124, 160, 0.5);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  color: #e87ca0;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-touch-callout: none;
-  min-height: 44px;
-  font-family: inherit;
-}
-
-.npc-tap-btn:hover {
-  background: rgba(232, 124, 160, 0.35);
-  color: #ffb0cc;
-}
-
-.radio-tap-btn {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: rgba(255, 215, 0, 0.5);
-  color: #ffd700;
-}
-
-.radio-tap-btn:hover {
-  background: rgba(255, 215, 0, 0.3);
-  color: #ffe88a;
-}
-
-.tv-tap-btn {
-  background: rgba(74, 176, 255, 0.15);
-  border-color: rgba(74, 176, 255, 0.5);
-  color: #4ab0ff;
-}
-
-.tv-tap-btn:hover {
-  background: rgba(74, 176, 255, 0.3);
-  color: #a8d8ff;
 }
 
 /* Tap-to-move row in controls panel */
