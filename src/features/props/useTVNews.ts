@@ -1,7 +1,7 @@
-﻿// Scripted TV news scheduler using the Web Speech API.
-// No AI / network calls ΓÇô all content is static and local.
+// Scripted TV news scheduler using the Web Speech API.
+// No AI / network calls — all content is static and local.
 
-import { findVoice } from "../../types/voices"
+import { findVoice } from "../voices"
 
 const NEWS_LINES = [
   "Breaking news: Scientists confirm the air beyond the town limits has turned an unsettling shade of yellow. Residents are advised to stay indoors.",
@@ -53,7 +53,7 @@ export function useTVNews() {
     utterance.pitch = 1.0
     utterance.volume = 0.75
 
-    const frenchVoice = findVoice("Google fran├ºais")
+    const frenchVoice = findVoice("Google français")
     if (frenchVoice !== undefined) {
       utterance.voice = frenchVoice
     }
