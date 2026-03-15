@@ -24,16 +24,16 @@ const NEWS_LINES = [
 export function useTVNews() {
   let currentIndex = 0
   let timerId: ReturnType<typeof setTimeout> | null = null
-  let active = false
+  let isActive = false
 
   function scheduleNext(delayMs: number) {
     timerId = setTimeout(() => {
-      if (active) speakNext()
+      if (isActive === true) { speakNext() }
     }, delayMs)
   }
 
   function speakNext() {
-    if (!active || !window.speechSynthesis) return
+    if (isActive !== true || !window.speechSynthesis) return
 
     const line = NEWS_LINES[currentIndex % NEWS_LINES.length]
     currentIndex++
@@ -44,14 +44,14 @@ export function useTVNews() {
     utterance.volume = 0.75
 
     utterance.onend = () => {
-      if (!active) return
+      if (isActive !== true) return
       // Randomized gap: 3–9 seconds between segments
       const gap = 3000 + Math.random() * 6000
       scheduleNext(gap)
     }
 
     utterance.onerror = () => {
-      if (!active) return
+      if (isActive !== true) return
       scheduleNext(5000)
     }
 
@@ -61,13 +61,13 @@ export function useTVNews() {
   /** Start the news broadcast after an optional initial delay (ms). */
   function start(initialDelayMs = 800) {
     stop()
-    active = true
+    isActive = true
     scheduleNext(initialDelayMs)
   }
 
   /** Stop the broadcast immediately, cancel any ongoing speech, and clear timers. */
   function stop() {
-    active = false
+    isActive = false
     if (timerId !== null) {
       clearTimeout(timerId)
       timerId = null

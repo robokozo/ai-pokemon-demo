@@ -25,7 +25,7 @@ export function useVoice() {
   const recognitionActive = computed(() => recognitionListening.value)
 
   async function startListening(): Promise<string> {
-    if (!recognitionSupported.value) {
+    if (recognitionSupported.value !== true) {
       voiceError.value = 'Speech recognition is not supported in this browser.'
       return ''
     }
@@ -79,7 +79,7 @@ export function useVoice() {
 
   // Browsers load voices asynchronously; getVoices() returns [] on first call until
   // the 'voiceschanged' event fires. This helper waits for the list to be populated.
-  function getAvailableVoices(): Promise<SpeechSynthesisVoice[]> {
+  function getAvailableVoices(): Promise<Array<SpeechSynthesisVoice>> {
     const voices = window.speechSynthesis.getVoices()
     if (voices.length > 0) return Promise.resolve(voices)
     return new Promise((resolve) => {
@@ -91,8 +91,8 @@ export function useVoice() {
     })
   }
 
-  async function speakText(text: string, options?: { pitch?: number; rate?: number }): Promise<void> {
-    if (!synthesisSupported.value) {
+  async function speakText({ text, pitch, rate }: { text: string; pitch?: number; rate?: number }): Promise<void> {
+    if (synthesisSupported.value !== true) {
       voiceError.value = 'Speech synthesis is not supported in this browser.'
       return
     }
@@ -100,8 +100,8 @@ export function useVoice() {
     // Create utterance with options
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'en-US'
-    u.pitch = options?.pitch ?? 1.1
-    u.rate = options?.rate ?? 0.95
+    u.pitch = pitch ?? 1.1
+    u.rate = rate ?? 0.95
     u.volume = 1
 
     // Pick a female voice if available (await so voices are ready on first call too)
@@ -117,7 +117,7 @@ export function useVoice() {
           v.name.includes('Moira') ||
           v.name.includes('Tessa')),
     )
-    if (femaleVoice) {
+    if (femaleVoice !== undefined) {
       u.voice = femaleVoice
     }
 

@@ -16,7 +16,7 @@ export type AIStatus =
   | typeof AI_READY
   | typeof AI_ERROR
 
-export function useChromeAI(characterName: string, characterDescription: string) {
+export function useChromeAI({ characterName, characterDescription }: { characterName: string; characterDescription: string }) {
   const status = ref<AIStatus>(AI_LOADING)
   const errorMessage = ref<string>('')
   let session: LanguageModelSession | null = null
@@ -137,8 +137,10 @@ STRICT RULES — follow these without exception:
   }
 
   onUnmounted(() => {
-    session?.destroy()
-    session = null
+    if (session !== null) {
+      session.destroy()
+      session = null
+    }
   })
 
   initialize()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 
-const voices = ref<SpeechSynthesisVoice[]>([]);
+const voices = ref<Array<SpeechSynthesisVoice>>([]);
 const selectedVoiceIndex = ref(0);
 const testText = ref(
   "And that was Ninja Loot in Nagrand — what a track! Coming up next, get ready for Pug Life Best Life!",
@@ -9,7 +9,7 @@ const testText = ref(
 const pitch = ref(1.1);
 const rate = ref(1.0);
 const volume = ref(1.0);
-const speaking = ref(false);
+const isSpeaking = ref(false);
 
 function loadVoices() {
   const v = speechSynthesis.getVoices();
@@ -20,8 +20,8 @@ function loadVoices() {
 
 onMounted(() => {
   loadVoices();
-  if (!voices.value.length) {
-    speechSynthesis.addEventListener("voiceschanged", loadVoices, { once: true });
+  if (voices.value.length === 0) {
+    speechSynthesis.addEventListener("voiceschanged", () => loadVoices(), { once: true });
   }
 });
 
@@ -32,15 +32,15 @@ function speak() {
   u.pitch = pitch.value;
   u.rate = rate.value;
   u.volume = volume.value;
-  speaking.value = true;
-  u.onend = () => (speaking.value = false);
-  u.onerror = () => (speaking.value = false);
+  isSpeaking.value = true;
+  u.onend = () => (isSpeaking.value = false);
+  u.onerror = () => (isSpeaking.value = false);
   speechSynthesis.speak(u);
 }
 
 function stop() {
   speechSynthesis.cancel();
-  speaking.value = false;
+  isSpeaking.value = false;
 }
 </script>
 
@@ -78,16 +78,16 @@ function stop() {
     </div>
 
     <div class="actions">
-      <button @click="speak" :disabled="speaking || !voices.length">
-        {{ speaking ? "Speaking…" : "▶ Speak" }}
+      <button @click="() => speak()" :disabled="isSpeaking === true || voices.length === 0">
+        {{ isSpeaking === true ? "Speaking…" : "▶ Speak" }}
       </button>
-      <button @click="stop" :disabled="!speaking">■ Stop</button>
+      <button @click="() => stop()" :disabled="isSpeaking !== true">■ Stop</button>
     </div>
 
-    <div v-if="voices.length" class="voice-info">
+    <div v-if="voices.length > 0" class="voice-info">
       <strong>Selected:</strong> {{ voices[selectedVoiceIndex]?.name }} &mdash;
       {{ voices[selectedVoiceIndex]?.lang }} &mdash;
-      {{ voices[selectedVoiceIndex]?.localService ? "local" : "remote" }}
+      {{ voices[selectedVoiceIndex]?.localService === true ? "local" : "remote" }}
     </div>
   </div>
 </template>

@@ -42,8 +42,14 @@ const { playing, volume, ended } = useMediaControls(audioEl, { src: currentSrc }
 
 const { speakText } = useVoice();
 
-async function playDJAnnouncement(justFinishedIndex: number, nextIndex: number) {
-  const justFinished = songs[justFinishedIndex].title;
+async function playDJAnnouncement({
+  prevIndex,
+  nextIndex,
+}: {
+  prevIndex: number;
+  nextIndex: number;
+}) {
+  const justFinished = songs[prevIndex].title;
   const next = songs[nextIndex].title;
   const lines = [
     `And that was "${justFinished}" — what a track! Coming up next, get ready for "${next}"!`,
@@ -51,7 +57,7 @@ async function playDJAnnouncement(justFinishedIndex: number, nextIndex: number) 
     `You're listening to the best radio in town. That was "${justFinished}", and up next: "${next}"!`,
   ];
   const line = lines[Math.floor(Math.random() * lines.length)];
-  await speakText(line, { pitch: 1.15, rate: 1.05 });
+  await speakText({ text: line, pitch: 1.15, rate: 1.05 });
 }
 
 // Auto-advance to the next song when the current one finishes
@@ -63,7 +69,7 @@ watch(ended, async (isEnded) => {
   currentSongIndex.value = nextIndex;
 
   // DJ announcement before the next track
-  await playDJAnnouncement(prevIndex, nextIndex);
+  await playDJAnnouncement({ prevIndex, nextIndex });
 
   currentSrc.value = songs[nextIndex].src;
   playing.value = true;
@@ -83,7 +89,7 @@ const nearRadio = computed(() => {
 });
 
 function toggleMusic() {
-  if (radioEnabled.value) {
+  if (radioEnabled.value === true) {
     radioEnabled.value = false;
     playing.value = false;
   } else {
@@ -112,7 +118,7 @@ let resumeTimerId: ReturnType<typeof setTimeout> | null = null;
 
 function toggleTV() {
   tvOn.value = !tvOn.value;
-  if (tvOn.value) {
+  if (tvOn.value === true) {
     tvNews.start(TV_INITIAL_DELAY_MS);
   } else {
     if (resumeTimerId !== null) {
@@ -137,28 +143,28 @@ function closeDialog() {
 }
 
 function interact() {
-  if (dialogOpen.value) return;
-  if (gameState.nearbyNPC) {
+  if (dialogOpen.value === true) return;
+  if (gameState.nearbyNPC !== null) {
     openDialog(gameState.nearbyNPC);
-  } else if (nearRadio.value) {
+  } else if (nearRadio.value === true) {
     toggleMusic();
-  } else if (nearTV.value) {
+  } else if (nearTV.value === true) {
     toggleTV();
   }
 }
 
 function handleInteract(e: KeyboardEvent) {
-  if ((e.key === "e" || e.key === "E" || e.key === " ") && !dialogOpen.value) {
+  if ((e.key === "e" || e.key === "E" || e.key === " ") && dialogOpen.value !== true) {
     interact();
   }
-  if (e.key === "Escape" && dialogOpen.value) {
+  if (e.key === "Escape" && dialogOpen.value === true) {
     closeDialog();
   }
 }
 
 // ── TV speech – pause during Mom dialog, resume after ─────────────────────────
 watch(dialogOpen, (isOpen) => {
-  if (isOpen) {
+  if (isOpen === true) {
     // Dialog opened: immediately stop TV speech and cancel any pending resume
     if (resumeTimerId !== null) {
       clearTimeout(resumeTimerId);
@@ -167,10 +173,12 @@ watch(dialogOpen, (isOpen) => {
     tvNews.stop();
   } else {
     // Dialog closed: if TV is on, resume after a short delay
-    if (tvOn.value) {
+    if (tvOn.value === true) {
       resumeTimerId = setTimeout(() => {
         resumeTimerId = null;
-        if (tvOn.value) tvNews.start();
+        if (tvOn.value === true) {
+          tvNews.start();
+        }
       }, TV_RESUME_DELAY_MS);
     }
   }
@@ -180,7 +188,7 @@ watch(dialogOpen, (isOpen) => {
 let animationId: number | null = null;
 
 function gameLoop() {
-  if (!dialogOpen.value) {
+  if (dialogOpen.value !== true) {
     updatePlayer();
   }
   animationId = requestAnimationFrame(gameLoop);
@@ -223,24 +231,28 @@ function handlePointerDown(event: PointerEvent) {
   const worldPoint = new THREE.Vector3();
   const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint);
 
-  if (hit) {
+  if (hit !== null) {
     setTapDestination(worldPoint);
   }
 }
 
+const boundOnKeyDown = (e: KeyboardEvent) => onKeyDown(e);
+const boundOnKeyUp = (e: KeyboardEvent) => onKeyUp(e);
+const boundHandleInteract = (e: KeyboardEvent) => handleInteract(e);
+
 onMounted(() => {
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keydown", handleInteract);
-  window.addEventListener("keyup", onKeyUp);
+  window.addEventListener("keydown", boundOnKeyDown);
+  window.addEventListener("keydown", boundHandleInteract);
+  window.addEventListener("keyup", boundOnKeyUp);
   gameLoop();
 
   volume.value = 0.35;
 });
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", onKeyDown);
-  window.removeEventListener("keydown", handleInteract);
-  window.removeEventListener("keyup", onKeyUp);
+  window.removeEventListener("keydown", boundOnKeyDown);
+  window.removeEventListener("keydown", boundHandleInteract);
+  window.removeEventListener("keyup", boundOnKeyUp);
   if (animationId !== null) cancelAnimationFrame(animationId);
   if (resumeTimerId !== null) clearTimeout(resumeTimerId);
   tvNews.stop();
@@ -250,7 +262,7 @@ onUnmounted(() => {
 
 // Floor tile colors (checkerboard)
 const floorTiles = computed(() => {
-  const tiles: { x: number; z: number; color: string }[] = [];
+  const tiles: Array<{ x: number; z: number; color: string }> = [];
   for (let x = 0; x < ROOM_WIDTH; x++) {
     for (let z = 0; z < ROOM_HEIGHT; z++) {
       const isLight = (x + z) % 2 === 0;

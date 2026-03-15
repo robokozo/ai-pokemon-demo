@@ -21,8 +21,10 @@ let session: LanguageModelSession | null = null;
 const isAIAvailable = typeof LanguageModel !== "undefined";
 
 async function createSession() {
-  session?.destroy();
-  session = null;
+  if (session !== null) {
+    session.destroy();
+    session = null;
+  }
   error.value = null;
 
   const initialPrompts: Array<LanguageModelPromptMessage> = [
@@ -53,7 +55,10 @@ async function send() {
     if (session === null) {
       await createSession();
     }
-    const response = await session!.prompt(text);
+    if (session === null) {
+      throw new Error("Session unavailable");
+    }
+    const response = await session.prompt(text);
     messages.value.push({ role: "assistant", content: response });
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Unknown error";
@@ -63,14 +68,16 @@ async function send() {
 }
 
 function reset() {
-  session?.destroy();
-  session = null;
+  if (session !== null) {
+    session.destroy();
+    session = null;
+  }
   messages.value = [];
   error.value = null;
 }
 
 function handleKeydown({ event }: { event: KeyboardEvent }) {
-  if (event.key === "Enter" && !event.shiftKey) {
+  if (event.key === "Enter" && event.shiftKey !== true) {
     event.preventDefault();
     send();
   }
@@ -79,7 +86,7 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
 
 <template>
   <div class="prompt-debug">
-    <div v-if="!isAIAvailable" class="unavailable-banner">
+    <div v-if="isAIAvailable !== true" class="unavailable-banner">
       Chrome AI (LanguageModel) is not available in this browser. Requires Chrome 138+ with the
       Prompt API flag enabled.
     </div>
@@ -88,7 +95,7 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
       <div class="config-row">
         <div class="field">
           <label>System prompt</label>
-          <textarea v-model="systemPrompt" rows="4" @change="reset" />
+          <textarea v-model="systemPrompt" rows="4" @change="() => reset()" />
           <span class="field-hint">Changing this resets the session.</span>
         </div>
       </div>
@@ -101,12 +108,19 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
             min="0"
             max="2"
             step="0.05"
-            @change="reset"
+            @change="() => reset()"
           />
         </div>
         <div class="field">
           <label>Top-K: {{ topK }}</label>
-          <input type="range" v-model.number="topK" min="1" max="100" step="1" @change="reset" />
+          <input
+            type="range"
+            v-model.number="topK"
+            min="1"
+            max="100"
+            step="1"
+            @change="() => reset()"
+          />
         </div>
       </div>
     </div>
@@ -119,7 +133,7 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
         <span class="message-role">{{ msg.role }}</span>
         <span class="message-content">{{ msg.content }}</span>
       </div>
-      <div v-if="isLoading" class="message message--assistant loading">
+      <div v-if="isLoading === true" class="message message--assistant loading">
         <span class="message-role">assistant</span>
         <span class="message-content">…</span>
       </div>
@@ -131,17 +145,19 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
         v-model="userInput"
         rows="2"
         placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
-        :disabled="isLoading || !isAIAvailable"
+        :disabled="isLoading === true || isAIAvailable !== true"
         @keydown="(e) => handleKeydown({ event: e })"
       />
       <div class="input-actions">
         <button
-          @click="send"
-          :disabled="isLoading || !isAIAvailable || userInput.trim().length === 0"
+          @click="() => send()"
+          :disabled="isLoading === true || isAIAvailable !== true || userInput.trim().length === 0"
         >
-          {{ isLoading ? "Sending…" : "▶ Send" }}
+          {{ isLoading === true ? "Sending…" : "▶ Send" }}
         </button>
-        <button class="btn-reset" @click="reset" :disabled="messages.length === 0">↺ Reset</button>
+        <button class="btn-reset" @click="() => reset()" :disabled="messages.length === 0">
+          ↺ Reset
+        </button>
       </div>
     </div>
   </div>

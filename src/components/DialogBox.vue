@@ -1,28 +1,31 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { useChromeAI } from '../composables/useChromeAI'
-import { useVoice } from '../composables/useVoice'
+import { ref, watch, nextTick } from "vue";
+import { useChromeAI } from "../composables/useChromeAI";
+import { useVoice } from "../composables/useVoice";
 
 interface Props {
-  npcName: string
-  npcDescription: string
-  visible: boolean
+  npcName: string;
+  npcDescription: string;
+  visible: boolean;
 }
 
 interface Message {
-  role: 'player' | 'npc'
-  text: string
+  role: "player" | "npc";
+  text: string;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<{ close: [] }>()
+const props = defineProps<Props>();
+const emit = defineEmits<{ close: [] }>();
 
-const messages = ref<Message[]>([])
-const textInput = ref('')
-const isThinking = ref(false)
-const messagesContainer = ref<HTMLElement | null>(null)
+const messages = ref<Array<Message>>([]);
+const textInput = ref("");
+const isThinking = ref(false);
+const messagesContainer = ref<HTMLElement | null>(null);
 
-const { status, sendMessage } = useChromeAI(props.npcName, props.npcDescription)
+const { status, sendMessage } = useChromeAI({
+  characterName: props.npcName,
+  characterDescription: props.npcDescription,
+});
 const {
   recognitionSupported,
   synthesisSupported,
@@ -32,85 +35,85 @@ const {
   stopListening,
   speakText,
   stopSpeaking,
-} = useVoice()
+} = useVoice();
 
 // Greet the player when dialog opens
 watch(
   () => props.visible,
   async (visible) => {
     if (visible && messages.value.length === 0) {
-      await greetPlayer()
+      await greetPlayer();
     }
   },
   { immediate: true },
-)
+);
 
 async function greetPlayer() {
-  isThinking.value = true
-  const greeting = await sendMessage('*The player approaches and wants to talk to you.*')
-  isThinking.value = false
-  messages.value.push({ role: 'npc', text: greeting })
-  if (synthesisSupported.value) {
-    await speakText(greeting, { pitch: 1.2, rate: 0.9 })
+  isThinking.value = true;
+  const greeting = await sendMessage("*The player approaches and wants to talk to you.*");
+  isThinking.value = false;
+  messages.value.push({ role: "npc", text: greeting });
+  if (synthesisSupported.value === true) {
+    await speakText({ text: greeting, pitch: 1.2, rate: 0.9 });
   }
-  scrollToBottom()
+  scrollToBottom();
 }
 
 async function sendText() {
-  const text = textInput.value.trim()
-  if (!text || isThinking.value) return
-  textInput.value = ''
-  await handlePlayerInput(text)
+  const text = textInput.value.trim();
+  if (text.length === 0 || isThinking.value === true) return;
+  textInput.value = "";
+  await handlePlayerInput(text);
 }
 
 async function handleVoiceInput() {
   if (isListening.value) {
-    stopListening()
-    return
+    stopListening();
+    return;
   }
-  const spoken = await startListening()
-  if (spoken) {
-    await handlePlayerInput(spoken)
+  const spoken = await startListening();
+  if (spoken.length > 0) {
+    await handlePlayerInput(spoken);
   }
 }
 
 async function handlePlayerInput(text: string) {
-  messages.value.push({ role: 'player', text })
-  scrollToBottom()
+  messages.value.push({ role: "player", text });
+  scrollToBottom();
 
-  isThinking.value = true
-  const response = await sendMessage(text)
-  isThinking.value = false
+  isThinking.value = true;
+  const response = await sendMessage(text);
+  isThinking.value = false;
 
-  messages.value.push({ role: 'npc', text: response })
-  scrollToBottom()
+  messages.value.push({ role: "npc", text: response });
+  scrollToBottom();
 
-  if (synthesisSupported.value) {
-    await speakText(response, { pitch: 1.2, rate: 0.9 })
+  if (synthesisSupported.value === true) {
+    await speakText({ text: response, pitch: 1.2, rate: 0.9 });
   }
 }
 
 function handleClose() {
-  stopSpeaking()
-  stopListening()
-  emit('close')
+  stopSpeaking();
+  stopListening();
+  emit("close");
 }
 
 function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-  })
+  });
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    sendText()
+  if (e.key === "Enter" && e.shiftKey !== true) {
+    e.preventDefault();
+    sendText();
   }
-  if (e.key === 'Escape') {
-    handleClose()
+  if (e.key === "Escape") {
+    handleClose();
   }
 }
 </script>
@@ -136,13 +139,13 @@ function onKeydown(e: KeyboardEvent) {
               }"
             >
               {{
-                status === 'ready'
-                  ? '🧠 AI'
-                  : status === 'loading'
-                    ? '⏳ Loading AI…'
-                    : status === 'unavailable'
-                      ? '💬 Scripted'
-                      : '⚠️ Fallback'
+                status === "ready"
+                  ? "🧠 AI"
+                  : status === "loading"
+                    ? "⏳ Loading AI…"
+                    : status === "unavailable"
+                      ? "💬 Scripted"
+                      : "⚠️ Fallback"
               }}
             </span>
           </div>
@@ -152,13 +155,8 @@ function onKeydown(e: KeyboardEvent) {
         <!-- Messages -->
         <div ref="messagesContainer" class="messages">
           <TransitionGroup name="message">
-            <div
-              v-for="(msg, i) in messages"
-              :key="i"
-              class="message"
-              :class="msg.role"
-            >
-              <span class="message-label">{{ msg.role === 'npc' ? npcName : 'You' }}</span>
+            <div v-for="(msg, i) in messages" :key="i" class="message" :class="msg.role">
+              <span class="message-label">{{ msg.role === "npc" ? npcName : "You" }}</span>
               <p class="message-text">{{ msg.text }}</p>
             </div>
           </TransitionGroup>
@@ -166,9 +164,7 @@ function onKeydown(e: KeyboardEvent) {
           <div v-if="isThinking" class="message npc thinking">
             <span class="message-label">{{ npcName }}</span>
             <p class="message-text">
-              <span class="dot-pulse">
-                <span /><span /><span />
-              </span>
+              <span class="dot-pulse"> <span /><span /><span /> </span>
             </p>
           </div>
         </div>
@@ -193,22 +189,16 @@ function onKeydown(e: KeyboardEvent) {
             :title="isListening ? 'Stop listening' : 'Speak'"
             @click="handleVoiceInput"
           >
-            {{ isListening ? '🔴' : isSpeaking ? '🔊' : '🎤' }}
+            {{ isListening ? "🔴" : isSpeaking ? "🔊" : "🎤" }}
           </button>
 
-          <button
-            class="send-btn"
-            :disabled="isThinking || !textInput.trim()"
-            @click="sendText"
-          >
+          <button class="send-btn" :disabled="isThinking || !textInput.trim()" @click="sendText">
             Send
           </button>
         </div>
 
         <!-- Controls hint -->
-        <div class="dialog-hint">
-          Press <kbd>Esc</kbd> or click outside to close
-        </div>
+        <div class="dialog-hint">Press <kbd>Esc</kbd> or click outside to close</div>
       </div>
     </div>
   </Transition>
@@ -269,7 +259,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .npc-name {
-  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-family: "Press Start 2P", "Courier New", monospace;
   font-size: 0.85rem;
   color: #e0e0ff;
   font-weight: bold;
@@ -473,8 +463,13 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 @keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(255, 80, 80, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 80, 80, 0);
+  }
 }
 
 .send-btn {
@@ -518,7 +513,9 @@ kbd {
 /* Transitions */
 .dialog-enter-active,
 .dialog-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 .dialog-enter-from,

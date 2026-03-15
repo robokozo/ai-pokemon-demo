@@ -15,7 +15,7 @@ export interface Character {
 
 export interface GameState {
   player: Character
-  npcs: Character[]
+  npcs: Array<Character>
   nearbyNPC: Character | null
   interactionDistance: number
 }
@@ -77,19 +77,19 @@ export function useGameWorld() {
     let dz = 0
 
     const hasKeyInput =
-      keys['ArrowUp'] || keys['w'] || keys['W'] ||
-      keys['ArrowDown'] || keys['s'] || keys['S'] ||
-      keys['ArrowLeft'] || keys['a'] || keys['A'] ||
-      keys['ArrowRight'] || keys['d'] || keys['D']
+      keys['ArrowUp'] === true || keys['w'] === true || keys['W'] === true ||
+      keys['ArrowDown'] === true || keys['s'] === true || keys['S'] === true ||
+      keys['ArrowLeft'] === true || keys['a'] === true || keys['A'] === true ||
+      keys['ArrowRight'] === true || keys['d'] === true || keys['D'] === true
 
-    if (hasKeyInput) {
+    if (hasKeyInput === true) {
       // Keyboard input cancels any active tap destination
       clearTapDestination()
 
-      if (keys['ArrowUp'] || keys['w'] || keys['W']) dz -= moveSpeed
-      if (keys['ArrowDown'] || keys['s'] || keys['S']) dz += moveSpeed
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= moveSpeed
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += moveSpeed
+      if (keys['ArrowUp'] === true || keys['w'] === true || keys['W'] === true) dz -= moveSpeed
+      if (keys['ArrowDown'] === true || keys['s'] === true || keys['S'] === true) dz += moveSpeed
+      if (keys['ArrowLeft'] === true || keys['a'] === true || keys['A'] === true) dx -= moveSpeed
+      if (keys['ArrowRight'] === true || keys['d'] === true || keys['D'] === true) dx += moveSpeed
     } else if (tapDestination.value) {
       const dest = tapDestination.value
       const ddx = dest.x - pos.x
@@ -126,16 +126,16 @@ export function useGameWorld() {
     const newZ = Math.max(-halfH, Math.min(halfH, pos.z + dz))
 
     // Simple NPC collision avoidance
-    let blocked = false
+    let isBlocked = false
     for (const npc of gameState.npcs) {
       const dist = Math.sqrt((newX - npc.position.x) ** 2 + (newZ - npc.position.z) ** 2)
       if (dist < 0.7) {
-        blocked = true
+        isBlocked = true
         break
       }
     }
 
-    if (!blocked) {
+    if (isBlocked !== true) {
       pos.x = newX
       pos.z = newZ
     }
