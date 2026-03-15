@@ -1,7 +1,7 @@
 // Scripted TV news scheduler using the Web Speech API.
 // No AI / network calls — all content is static and local.
 
-import { findVoice } from "../voices"
+import { findVoice } from "../../voices"
 
 const NEWS_LINES = [
   "Breaking news: Scientists confirm the air beyond the town limits has turned an unsettling shade of yellow. Residents are advised to stay indoors.",

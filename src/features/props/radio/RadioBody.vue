@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../useEntity"
+import { useEntity } from "../../useEntity"
 
 interface Props {
   position?: [number, number, number]

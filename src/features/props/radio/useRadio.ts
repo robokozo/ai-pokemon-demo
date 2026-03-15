@@ -1,6 +1,6 @@
 import { ref, watch, onMounted } from "vue"
 import { useMediaControls } from "@vueuse/core"
-import { useVoice } from "../useVoice"
+import { useVoice } from "../../useVoice"
 
 interface Song {
   src: string

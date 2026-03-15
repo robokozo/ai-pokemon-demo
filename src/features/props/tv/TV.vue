@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { useTVNews } from "./useTVNews"
-import { useEntity } from "../useEntity"
+import { useEntity } from "../../useEntity"
 
 interface Props {
   position?: [number, number, number]
   rotation?: [number, number, number]
-  state?: "on" | "off"
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0] } = defineProps<Props>()
+
+const tvState = ref<"on" | "off">("off")
+
+function toggleTV() {
+  tvState.value = tvState.value === "on" ? "off" : "on"
+}
 
 useEntity({
   id: "tv",
@@ -20,6 +25,8 @@ useEntity({
   interactive: true,
   isStatic: true,
   position,
+  onInteract: () => toggleTV(),
+  actionLabel: () => (tvState.value === "on" ? "Turn off TV" : "Turn on TV"),
 })
 
 const TV_INITIAL_DELAY_MS = 800
@@ -42,7 +49,7 @@ tvNews.onStoryEnd(() => {
 
 // Start/stop the news broadcast when the TV is switched on/off
 watch(
-  () => state,
+  () => tvState.value,
   (nowState) => {
     if (nowState === "on") {
       tvNews.start(TV_INITIAL_DELAY_MS)
@@ -69,25 +76,25 @@ watch(
     <TresMesh :position="[0, 1.0, 0.145]">
       <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
       <TresMeshStandardMaterial
-        :color="state === 'on' ? '#a8d8ff' : '#111111'"
-        :emissive="state === 'on' ? '#a8d8ff' : '#000000'"
-        :emissive-intensity="state === 'on' ? 2.2 : 0"
+        :color="tvState === 'on' ? '#a8d8ff' : '#111111'"
+        :emissive="tvState === 'on' ? '#a8d8ff' : '#000000'"
+        :emissive-intensity="tvState === 'on' ? 2.2 : 0"
       />
     </TresMesh>
     <!-- Power indicator light -->
     <TresMesh :position="[0.62, 0.57, 0.145]">
       <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
       <TresMeshLambertMaterial
-        :color="state === 'on' ? '#00ff88' : '#1a4a2a'"
-        :emissive="state === 'on' ? '#00ff88' : '#000000'"
-        :emissive-intensity="state === 'on' ? 0.8 : 0"
+        :color="tvState === 'on' ? '#00ff88' : '#1a4a2a'"
+        :emissive="tvState === 'on' ? '#00ff88' : '#000000'"
+        :emissive-intensity="tvState === 'on' ? 0.8 : 0"
       />
     </TresMesh>
 
     <!-- ── Broadcast overlay (visible only when on) ── -->
     <!-- All elements sit at z=0.156, just in front of the screen face (z=0.15).
          Screen spans x: -0.575→0.575, y: 0.675→1.325. -->
-    <TresGroup v-if="state === 'on'">
+    <TresGroup v-if="tvState === 'on'">
       <!-- Anchor figure — right half of screen -->
       <!-- Hair — top cap (dark brown) -->
       <TresMesh :position="[0.22, 1.245, 0.156]">

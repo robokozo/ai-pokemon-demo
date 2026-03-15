@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { useEntity } from "../useEntity"
+import { useEntity } from "../../useEntity"
+import { useRadio } from "./useRadio"
 
 interface Props {
   position?: [number, number, number]
   rotation?: [number, number, number]
-  state?: "on" | "off"
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0] } = defineProps<Props>()
+
+const { radioState, toggle } = useRadio()
 
 useEntity({
   id: "radio",
@@ -18,6 +20,8 @@ useEntity({
   interactive: true,
   isStatic: true,
   position,
+  onInteract: () => toggle(),
+  actionLabel: () => (radioState.value === "on" ? "Turn off radio" : "Turn on radio"),
 })
 </script>
 
@@ -69,9 +73,9 @@ useEntity({
     <TresMesh :position="[0.06, 0.72, 0.145]">
       <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
       <TresMeshLambertMaterial
-        :color="state === 'on' ? '#00ff88' : '#1a4a2a'"
-        :emissive="state === 'on' ? '#00ff88' : '#000000'"
-        :emissive-intensity="state === 'on' ? 0.8 : 0"
+        :color="radioState === 'on' ? '#00ff88' : '#1a4a2a'"
+        :emissive="radioState === 'on' ? '#00ff88' : '#000000'"
+        :emissive-intensity="radioState === 'on' ? 0.8 : 0"
       />
     </TresMesh>
 

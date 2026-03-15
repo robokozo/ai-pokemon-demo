@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import RadioBody from "./RadioBody.vue"
-import Table from "../furniture/Table.vue"
+import Table from "../../furniture/Table.vue"
 
 interface Props {
   position?: [number, number, number]

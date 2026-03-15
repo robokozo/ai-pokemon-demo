@@ -12,9 +12,22 @@ interface EntityConfig {
   interactive?: true
   isStatic?: true
   position: [number, number, number]
+  onInteract?: () => void
+  actionLabel?: () => string
 }
 
-export function useEntity({ id: idProp, name: nameProp, kind, collider, colliderSize, interactive, isStatic, position }: EntityConfig): SceneEntity {
+export function useEntity({
+  id: idProp,
+  name: nameProp,
+  kind,
+  collider,
+  colliderSize,
+  interactive,
+  isStatic,
+  position,
+  onInteract,
+  actionLabel,
+}: EntityConfig): SceneEntity {
   const id = idProp ?? `entity-${++entityCount}`
   const name = nameProp ?? id ?? `Entity ${entityCount}`
   const store = useSceneStore()
@@ -31,6 +44,8 @@ export function useEntity({ id: idProp, name: nameProp, kind, collider, collider
     interactive,
     isStatic,
     position: entityPosition,
+    onInteract,
+    actionLabel,
   }
 
   onMounted(() => {

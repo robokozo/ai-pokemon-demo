@@ -1,6 +1,7 @@
+import { reactive } from "vue"
+import { useEventListener } from "@vueuse/core"
 import { useSceneStore } from "./useSceneStore"
 import type { EntityPosition } from "./useSceneStore"
-import { useControls } from "./useControls"
 
 const MOVE_SPEED = 0.05
 const NPC_COLLISION_RADIUS = 0.7
@@ -8,9 +9,30 @@ const PLAYER_HALF = 0.3
 const ARRIVE_THRESHOLD = 0.12
 const STUCK_LIMIT = 10 // frames without progress toward destination before cancelling
 
-export function usePlayerMovement({ controls, position }: { controls: ReturnType<typeof useControls>; position: EntityPosition }) {
+export interface KeyMap {
+  up: Array<string>
+  down: Array<string>
+  left: Array<string>
+  right: Array<string>
+}
+
+export const DEFAULT_KEY_MAP: KeyMap = {
+  up: ["ArrowUp", "w", "W"],
+  down: ["ArrowDown", "s", "S"],
+  left: ["ArrowLeft", "a", "A"],
+  right: ["ArrowRight", "d", "D"],
+}
+
+export function usePlayerMovement({ position, keyMap = DEFAULT_KEY_MAP }: { position: EntityPosition; keyMap?: KeyMap }) {
   const store = useSceneStore()
-  const { keys } = controls
+  const keys = reactive<Record<string, boolean>>({})
+
+  useEventListener(window, "keydown", ({ key }: KeyboardEvent) => {
+    keys[key] = true
+  })
+  useEventListener(window, "keyup", ({ key }: KeyboardEvent) => {
+    keys[key] = false
+  })
 
   let stuckFrameCount = 0
   let lastDistToDestination = Infinity
@@ -22,26 +44,14 @@ export function usePlayerMovement({ controls, position }: { controls: ReturnType
     let dx = 0
     let dz = 0
 
-    const hasKeyInput =
-      keys["ArrowUp"] === true ||
-      keys["w"] === true ||
-      keys["W"] === true ||
-      keys["ArrowDown"] === true ||
-      keys["s"] === true ||
-      keys["S"] === true ||
-      keys["ArrowLeft"] === true ||
-      keys["a"] === true ||
-      keys["A"] === true ||
-      keys["ArrowRight"] === true ||
-      keys["d"] === true ||
-      keys["D"] === true
+    const hasKeyInput = [...keyMap.up, ...keyMap.down, ...keyMap.left, ...keyMap.right].some((k) => keys[k] === true)
 
     if (hasKeyInput === true) {
       store.clearTapDestination()
-      if (keys["ArrowUp"] === true || keys["w"] === true || keys["W"] === true) dz -= MOVE_SPEED
-      if (keys["ArrowDown"] === true || keys["s"] === true || keys["S"] === true) dz += MOVE_SPEED
-      if (keys["ArrowLeft"] === true || keys["a"] === true || keys["A"] === true) dx -= MOVE_SPEED
-      if (keys["ArrowRight"] === true || keys["d"] === true || keys["D"] === true) dx += MOVE_SPEED
+      if (keyMap.up.some((k) => keys[k] === true)) dz -= MOVE_SPEED
+      if (keyMap.down.some((k) => keys[k] === true)) dz += MOVE_SPEED
+      if (keyMap.left.some((k) => keys[k] === true)) dx -= MOVE_SPEED
+      if (keyMap.right.some((k) => keys[k] === true)) dx += MOVE_SPEED
     } else if (store.tapDestination !== null) {
       const dest = store.tapDestination
       const ddx = dest.x - pos.x

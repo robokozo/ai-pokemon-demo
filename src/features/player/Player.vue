@@ -1,43 +1,20 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue"
 import { useLoop } from "@tresjs/core"
 import { useEntity } from "../useEntity"
-import { useControls } from "../useControls"
 import { usePlayerMovement } from "../usePlayerMovement"
+import type { KeyMap } from "../usePlayerMovement"
 
 interface Props {
   id?: string
   name?: string
   initialPosition?: [number, number, number]
-  controlsOverride?: ReturnType<typeof useControls>
+  keyMap?: KeyMap
 }
 
-const { id, name, initialPosition = [0, 0, 1], controlsOverride } = defineProps<Props>()
+const { id, name, initialPosition = [0, 0, 1], keyMap } = defineProps<Props>()
 
 const { position } = useEntity({ id, name, kind: "player", collider: "solid", position: initialPosition })
-
-const controls = controlsOverride !== undefined ? controlsOverride : useControls()
-const movement = usePlayerMovement({ controls, position })
-
-function onKeyDown(e: KeyboardEvent) {
-  controls.onKeyDown(e)
-}
-function onKeyUp(e: KeyboardEvent) {
-  controls.onKeyUp(e)
-}
-
-onMounted(() => {
-  if (controlsOverride === undefined) {
-    window.addEventListener("keydown", onKeyDown)
-    window.addEventListener("keyup", onKeyUp)
-  }
-})
-onUnmounted(() => {
-  if (controlsOverride === undefined) {
-    window.removeEventListener("keydown", onKeyDown)
-    window.removeEventListener("keyup", onKeyUp)
-  }
-})
+const movement = usePlayerMovement({ position, keyMap })
 
 const { onBeforeRender } = useLoop()
 onBeforeRender(() => {

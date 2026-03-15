@@ -1,6 +1,5 @@
 import { defineStore } from "pinia"
 import { markRaw, ref } from "vue"
-
 export type EntityKind = "player" | "npc" | "prop"
 export type ColliderType = "solid" | "none"
 
@@ -22,6 +21,10 @@ export interface SceneEntity {
   /** Marks entities that never move. register() calls markRaw() on them to skip Vue's deep proxy. */
   isStatic?: true
   position: EntityPosition
+  /** Called when the player interacts with this entity. */
+  onInteract?: () => void
+  /** Reactive label shown in the HUD action button. */
+  actionLabel?: () => string
 }
 
 const INTERACTION_DISTANCE = 1.8
@@ -31,9 +34,24 @@ export const useSceneStore = defineStore("scene", () => {
   const nearbyEntity = ref<SceneEntity | null>(null)
   const tapDestination = ref<EntityPosition | null>(null)
   const paused = ref(false)
+  const dialogEntity = ref<SceneEntity | null>(null)
+  const dialogDescription = ref<string | null>(null)
 
   function setPaused(value: boolean) {
     paused.value = value
+  }
+
+  function openDialog({ description = "" }: { description?: string } = {}) {
+    if (nearbyEntity.value === null) return
+    dialogEntity.value = nearbyEntity.value
+    dialogDescription.value = description
+    paused.value = true
+  }
+
+  function closeDialog() {
+    dialogEntity.value = null
+    dialogDescription.value = null
+    paused.value = false
   }
 
   function register(entity: SceneEntity) {
@@ -116,7 +134,11 @@ export const useSceneStore = defineStore("scene", () => {
     nearbyEntity,
     tapDestination,
     paused,
+    dialogEntity,
+    dialogDescription,
     setPaused,
+    openDialog,
+    closeDialog,
     register,
     unregister,
     setTapDestination,
