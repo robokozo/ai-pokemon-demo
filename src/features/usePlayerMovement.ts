@@ -6,15 +6,14 @@ const MOVE_SPEED = 0.05
 const NPC_COLLISION_RADIUS = 0.7
 const PLAYER_HALF = 0.3
 const ARRIVE_THRESHOLD = 0.12
-const STUCK_LIMIT = 30 // frames (~0.5s at 60fps)
+const STUCK_LIMIT = 10 // frames without progress toward destination before cancelling
 
 export function usePlayerMovement({ controls, position }: { controls: ReturnType<typeof useControls>; position: EntityPosition }) {
   const store = useSceneStore()
   const { keys } = controls
 
   let stuckFrameCount = 0
-  let lastX = 0
-  let lastZ = 0
+  let lastDistToDestination = Infinity
 
   function tick() {
     if (store.paused === true) return
@@ -51,55 +50,50 @@ export function usePlayerMovement({ controls, position }: { controls: ReturnType
 
       if (dist < ARRIVE_THRESHOLD) {
         store.clearTapDestination()
+        lastDistToDestination = Infinity
       } else {
         dx = (ddx / dist) * MOVE_SPEED
         dz = (ddz / dist) * MOVE_SPEED
 
-        if (Math.abs(pos.x - lastX) < 0.001 && Math.abs(pos.z - lastZ) < 0.001) {
+        // Cancel if we're not getting meaningfully closer to the destination
+        if (dist < lastDistToDestination - 0.001) {
+          stuckFrameCount = 0
+        } else {
           stuckFrameCount++
           if (stuckFrameCount >= STUCK_LIMIT) {
             store.clearTapDestination()
+            lastDistToDestination = Infinity
+          }
+        }
+        lastDistToDestination = dist
+      }
+    }
+
+    const solidEntities = store.getInteractables().filter((e) => e.collider === "solid")
+
+    // Test whether a given (x, z) position overlaps any solid entity.
+    function isOverlapping(x: number, z: number): boolean {
+      for (const entity of solidEntities) {
+        if (entity.colliderSize !== undefined) {
+          const { hw, hd } = entity.colliderSize
+          if (Math.abs(x - entity.position.x) < PLAYER_HALF + hw && Math.abs(z - entity.position.z) < PLAYER_HALF + hd) {
+            return true
           }
         } else {
-          stuckFrameCount = 0
+          if (Math.sqrt((x - entity.position.x) ** 2 + (z - entity.position.z) ** 2) < NPC_COLLISION_RADIUS) {
+            return true
+          }
         }
       }
+      return false
     }
 
-    lastX = pos.x
-    lastZ = pos.z
-
-    const newX = pos.x + dx
-    const newZ = pos.z + dz
-
-    // Block against any entity registered as "solid"
-    let isBlocked = false
-    for (const entity of store.getInteractables().filter((e) => e.collider === "solid")) {
-      if (entity.colliderSize !== undefined) {
-        // AABB check for rectangular furniture
-        const { hw, hd } = entity.colliderSize
-        const ox = Math.abs(newX - entity.position.x)
-        const oz = Math.abs(newZ - entity.position.z)
-        if (ox < PLAYER_HALF + hw && oz < PLAYER_HALF + hd) {
-          isBlocked = true
-          break
-        }
-      } else {
-        // Circle check for NPCs
-        const ndx = newX - entity.position.x
-        const ndz = newZ - entity.position.z
-        const dist = Math.sqrt(ndx * ndx + ndz * ndz)
-        if (dist < NPC_COLLISION_RADIUS) {
-          isBlocked = true
-          break
-        }
-      }
-    }
-
-    if (isBlocked !== true) {
-      pos.x = newX
-      pos.z = newZ
-    }
+    // Resolve each axis independently so the player slides along surfaces
+    // rather than getting fully stuck when only one axis is blocked.
+    const resolvedX = isOverlapping(pos.x + dx, pos.z) !== true ? pos.x + dx : pos.x
+    const resolvedZ = isOverlapping(resolvedX, pos.z + dz) !== true ? pos.z + dz : pos.z
+    pos.x = resolvedX
+    pos.z = resolvedZ
 
     store.updateNearbyEntity()
   }
