@@ -19,7 +19,12 @@ useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width
 </script>
 
 <template>
-  <TresMesh :position="[position[0], WALL_HEIGHT / 2, position[2]]" :cast-shadow="castShadow" :receive-shadow="castShadow">
+  <TresMesh
+    :position="[position[0], WALL_HEIGHT / 2, position[2]]"
+    :cast-shadow="castShadow"
+    :receive-shadow="castShadow"
+    :user-data="{ occludable: true }"
+  >
     <TresBoxGeometry :args="[width, WALL_HEIGHT, depth]" />
     <TresMeshLambertMaterial :color="color" />
   </TresMesh>

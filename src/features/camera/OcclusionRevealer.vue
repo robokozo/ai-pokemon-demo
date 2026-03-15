@@ -5,7 +5,6 @@ import { useEntityStore } from "../entities/useEntityStore"
 import { useSceneNavigation } from "../scenes/useSceneNavigation"
 
 const OCCLUDED_OPACITY = 0.25
-const ENTITY_ROOT_CHILD_LIMIT = 20
 
 const entityStore = useEntityStore()
 const sceneNav = useSceneNavigation()
@@ -23,29 +22,17 @@ interface SavedMaterial {
 
 const occludedGroups = new Map<THREE.Object3D, Array<SavedMaterial>>()
 
-function isPlayerDescendant(object: THREE.Object3D): boolean {
+/**
+ * Walk up from a hit mesh looking for an ancestor tagged with userData.occludable.
+ * Returns that ancestor, or null if none found.
+ */
+function findOccludableAncestor(object: THREE.Object3D): THREE.Object3D | null {
   let current: THREE.Object3D | null = object
   while (current !== null) {
-    if (current.userData?.isPlayer === true) return true
+    if (current.userData?.occludable === true) return current
     current = current.parent
   }
-  return false
-}
-
-/**
- * Walk up from a hit mesh to find the entity root group.
- * Stops when the parent is the Scene, null, or a large container group
- * (like SceneShell's wrapper which has many children).
- */
-function findEntityRoot(mesh: THREE.Object3D): THREE.Object3D {
-  let current: THREE.Object3D | null = mesh
-  while (current?.parent !== null) {
-    const parent = current.parent
-    if (parent === null || parent instanceof THREE.Scene) return current
-    if (parent.children.length >= ENTITY_ROOT_CHILD_LIMIT) return current
-    current = parent
-  }
-  return mesh
+  return null
 }
 
 function setGroupOpacity(root: THREE.Object3D, opacity: number): Array<SavedMaterial> {
@@ -91,12 +78,9 @@ onBeforeRender(({ scene }) => {
   const currentlyOccluding = new Set<THREE.Object3D>()
 
   for (const hit of intersections) {
-    if (isPlayerDescendant(hit.object) === true) continue
+    const root = findOccludableAncestor(hit.object)
+    if (root === null) continue
 
-    // Skip ground-level geometry (floor, path stones)
-    if (hit.point.y < 0.1) continue
-
-    const root = findEntityRoot(hit.object)
     currentlyOccluding.add(root)
 
     if (occludedGroups.has(root) !== true) {

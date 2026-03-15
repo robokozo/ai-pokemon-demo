@@ -28,7 +28,7 @@ const WINDOW_FRAME_COLOR = "#f0e8d8"
 </script>
 
 <template>
-  <TresGroup :position="position">
+  <TresGroup :position="position" :user-data="{ occludable: true }">
     <!-- Main body -->
     <TresMesh :position="[0, 1.5, 0]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[8.0, 3.0, 7.0]" />

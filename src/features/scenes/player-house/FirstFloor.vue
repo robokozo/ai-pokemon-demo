@@ -78,7 +78,7 @@ CURRENT OBJECTIVE: Encourage the player to sit down at the dining table and eat.
     <DiningTable id="dining-table" name="Dining Table" :position="[4.0, 0, 1.5]" />
 
     <MomNpc id="mom" name="Mom" :position="[3.0, 0, -2.5]" is-static :description="momDescription">
-      <InteractionIndicator :position="[0, 1.4, 0]" />
+      <InteractionIndicator :position="[0, 2.1, 0]" />
     </MomNpc>
 
     <!-- ── Front door — south wall centre, leading outside ────────── -->

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGLTF } from "@tresjs/cientos"
 import { useEntity } from "../useEntity"
 import { useDialogStore } from "../dialog/useDialogStore"
 
@@ -8,10 +9,9 @@ interface Props {
   position?: [number, number, number]
   isStatic?: true
   description?: string
-  castShadow?: boolean
 }
 
-const { id, name = "NPC", position = [-1.5, 0, -1.5], isStatic, description = "", castShadow = false } = defineProps<Props>()
+const { id, name = "NPC", position = [-1.5, 0, -1.5], isStatic, description = "" } = defineProps<Props>()
 
 const dialog = useDialogStore()
 
@@ -28,26 +28,20 @@ const entity = useEntity({
 })
 
 const { position: entityPosition } = entity
+
+const { state: model } = useGLTF(`${import.meta.env.BASE_URL}models/anju.glb`)
+
+const MODEL_SCALE = 0.028 as const
 </script>
 
 <template>
   <TresGroup :position="[entityPosition.x, entityPosition.y, entityPosition.z]">
-    <!-- Body -->
-    <TresMesh :position="[0, 0.3, 0]" :cast-shadow="castShadow">
+    <primitive v-if="model !== null" :object="model.scene.clone()" :scale="[MODEL_SCALE, MODEL_SCALE, MODEL_SCALE]" />
+
+    <!-- Fallback box while model loads -->
+    <TresMesh v-else :position="[0, 0.3, 0]">
       <TresBoxGeometry :args="[0.4, 0.5, 0.3]" />
       <TresMeshLambertMaterial color="#e87ca0" />
-    </TresMesh>
-
-    <!-- Head -->
-    <TresMesh :position="[0, 0.72, 0]" :cast-shadow="castShadow">
-      <TresBoxGeometry :args="[0.32, 0.32, 0.32]" />
-      <TresMeshLambertMaterial color="#f5cba0" />
-    </TresMesh>
-
-    <!-- Hair -->
-    <TresMesh :position="[0, 0.9, 0]" :cast-shadow="castShadow">
-      <TresBoxGeometry :args="[0.36, 0.18, 0.34]" />
-      <TresMeshLambertMaterial color="#6b3a2a" />
     </TresMesh>
 
     <!-- Slot for InteractionIndicator -->
