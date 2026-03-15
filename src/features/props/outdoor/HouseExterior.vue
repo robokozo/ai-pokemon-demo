@@ -22,7 +22,6 @@ useEntity({
 
 const WALL_COLOR = "#d4c4a8"
 const ROOF_COLOR = "#8b3a3a"
-const TRIM_COLOR = "#5a3e28"
 const WINDOW_COLOR = "#88bbdd"
 const WINDOW_FRAME_COLOR = "#f0e8d8"
 </script>
