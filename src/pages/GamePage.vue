@@ -2,7 +2,8 @@
 import { ref } from "vue"
 import { useEventListener } from "@vueuse/core"
 import { useSceneStore } from "../features/useSceneStore"
-import PlayerBedroom from "../features/scenes/player-bedroom/PlayerBedroom.vue"
+import PlayerBedroom from "../features/scenes/player-house/PlayerBedroom.vue"
+import FirstFloor from "../features/scenes/player-house/FirstFloor.vue"
 import DialogBox from "../features/ui/DialogBox.vue"
 
 const store = useSceneStore()
@@ -18,7 +19,8 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
 
 <template>
   <div class="game-container">
-    <PlayerBedroom />
+    <PlayerBedroom v-if="store.currentScene === 'bedroom'" />
+    <FirstFloor v-else-if="store.currentScene === 'first-floor'" />
 
     <!-- ── HUD overlay ── -->
     <div class="hud">

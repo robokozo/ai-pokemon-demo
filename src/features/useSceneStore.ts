@@ -3,6 +3,8 @@ import { markRaw, ref } from "vue"
 import { PLAYER_HALF, NPC_COLLISION_RADIUS } from "./usePlayerMovement"
 export type EntityKind = "player" | "npc" | "prop"
 export type ColliderType = "solid" | "none"
+export type SceneName = "bedroom" | "first-floor"
+export type Entrypoint = string
 
 export interface EntityPosition {
   x: number
@@ -45,9 +47,21 @@ export const useSceneStore = defineStore("scene", () => {
   const dialogEntity = ref<SceneEntity | null>(null)
   const dialogDescription = ref<string | null>(null)
   const camera = ref<SceneCamera | null>(null)
+  const currentScene = ref<SceneName>("bedroom")
+  const activeEntrypoint = ref<Entrypoint>("default")
 
   function setCamera(config: SceneCamera) {
     camera.value = config
+  }
+
+  function setScene({ scene, entrypoint = "default" }: { scene: SceneName; entrypoint?: Entrypoint }) {
+    currentScene.value = scene
+    activeEntrypoint.value = entrypoint
+    tapDestination.value = null
+    nearbyEntity.value = null
+    dialogEntity.value = null
+    dialogDescription.value = null
+    paused.value = false
   }
 
   function setPaused(value: boolean) {
@@ -182,5 +196,8 @@ export const useSceneStore = defineStore("scene", () => {
     updateNearbyEntity,
     camera,
     setCamera,
+    currentScene,
+    activeEntrypoint,
+    setScene,
   }
 })
