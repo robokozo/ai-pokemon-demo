@@ -15,6 +15,13 @@ const songs = [
   { src: `${import.meta.env.BASE_URL}music/gated-community-g-code.mp3`, title: 'Gated Community G-Code' },
   { src: `${import.meta.env.BASE_URL}music/stackoverflow-on-a-saturday-night.mp3`, title: 'Stack Overflow on a Saturday Night' },
 ]
+
+// Fisher-Yates shuffle so the playlist order is different every session
+for (let i = songs.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [songs[i], songs[j]] = [songs[j], songs[i]]
+}
+
 const currentSongIndex = ref(0)
 const currentSrc = ref(songs[0].src)
 
