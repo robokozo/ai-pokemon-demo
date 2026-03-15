@@ -1,4 +1,4 @@
-import { reactive } from "vue"
+import { reactive, ref } from "vue"
 import * as THREE from "three"
 import { useEventListener } from "@vueuse/core"
 import type { EntityPosition } from "./entities/entity"
@@ -70,6 +70,8 @@ export function usePlayerMovement({ position, keyMap = DEFAULT_KEY_MAP }: { posi
 
   const allKeys = [...keyMap.up, ...keyMap.down, ...keyMap.left, ...keyMap.right]
 
+  const facing = ref(0)
+
   let stuckFrameCount = 0
   let lastDistToDestination = Infinity
 
@@ -134,8 +136,12 @@ export function usePlayerMovement({ position, keyMap = DEFAULT_KEY_MAP }: { posi
     pos.x = resolvedX
     pos.z = resolvedZ
 
+    if (dx !== 0 || dz !== 0) {
+      facing.value = Math.atan2(dx, dz)
+    }
+
     gameState.nearbyEntity = entityStore.findNearestInteractive({ position: pos })
   }
 
-  return { tick }
+  return { tick, facing }
 }

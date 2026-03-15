@@ -15,7 +15,7 @@ interface Props {
 const { id, name, initialPosition = [0, 0, 1], keyMap } = defineProps<Props>()
 
 const { position } = useEntity({ id, name, kind: "player", collider: "solid", position: initialPosition })
-const movement = usePlayerMovement({ position, keyMap })
+const { tick, facing } = usePlayerMovement({ position, keyMap })
 
 const { state: model } = useGLTF(`${import.meta.env.BASE_URL}models/nathan.glb`)
 
@@ -23,12 +23,12 @@ const MODEL_SCALE = 0.085 as const
 
 const { onBeforeRender } = useLoop()
 onBeforeRender(() => {
-  movement.tick()
+  tick()
 })
 </script>
 
 <template>
-  <TresGroup :position="[position.x, 0, position.z]" :user-data="{ isPlayer: true }">
+  <TresGroup :position="[position.x, 0, position.z]" :rotation="[0, facing, 0]" :user-data="{ isPlayer: true }">
     <primitive v-if="model !== null" :object="model.scene.clone()" :scale="[MODEL_SCALE, MODEL_SCALE, MODEL_SCALE]" />
 
     <!-- Fallback box while model loads -->
