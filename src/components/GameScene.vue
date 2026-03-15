@@ -507,8 +507,12 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         :rotation="[0, -Math.PI / 2, 0]"
         :is-on="tvOn"
         :dialog-open="dialogOpen"
-        :show-indicator="nearTV === true && dialogOpen !== true"
-      />
+      >
+        <InteractionIndicator
+          v-if="nearTV === true && dialogOpen !== true"
+          :position="[0, 1.87, 0]"
+        />
+      </GameTV>
 
       <!-- ── Mom NPC ── -->
       <TresGroup v-for="npc in gameState.npcs" :key="npc.id">

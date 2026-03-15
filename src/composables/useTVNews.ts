@@ -1,6 +1,8 @@
 // Scripted TV news scheduler using the Web Speech API.
 // No AI / network calls – all content is static and local.
 
+import { findVoice } from '../types/voices'
+
 const NEWS_LINES = [
   'Breaking news: Scientists confirm the air beyond the town limits has turned an unsettling shade of yellow. Residents are advised to stay indoors.',
   'In other news, local adventurers are warned that suspicious berry patches have tripled this month. Officials urge caution near bushes.',
@@ -25,6 +27,8 @@ export function useTVNews() {
   let currentIndex = 0
   let timerId: ReturnType<typeof setTimeout> | null = null
   let isActive = false
+  let storyStartCallback: (() => void) | null = null
+  let storyEndCallback: (() => void) | null = null
 
   function scheduleNext(delayMs: number) {
     timerId = setTimeout(() => {
@@ -38,13 +42,25 @@ export function useTVNews() {
     const line = NEWS_LINES[currentIndex % NEWS_LINES.length]
     currentIndex++
 
+    if (storyStartCallback !== null) {
+      storyStartCallback()
+    }
+
     const utterance = new SpeechSynthesisUtterance(line)
     utterance.rate = 0.92
     utterance.pitch = 1.0
     utterance.volume = 0.75
 
+    const frenchVoice = findVoice('Google français')
+    if (frenchVoice !== undefined) {
+      utterance.voice = frenchVoice
+    }
+
     utterance.onend = () => {
       if (isActive !== true) return
+      if (storyEndCallback !== null) {
+        storyEndCallback()
+      }
       // Randomized gap: 3–9 seconds between segments
       const gap = 3000 + Math.random() * 6000
       scheduleNext(gap)
@@ -52,10 +68,23 @@ export function useTVNews() {
 
     utterance.onerror = () => {
       if (isActive !== true) return
+      if (storyEndCallback !== null) {
+        storyEndCallback()
+      }
       scheduleNext(5000)
     }
 
     window.speechSynthesis.speak(utterance)
+  }
+
+  /** Register a callback that fires each time a new story begins speaking. */
+  function onStoryStart(cb: () => void) {
+    storyStartCallback = cb
+  }
+
+  /** Register a callback that fires each time a story finishes speaking. */
+  function onStoryEnd(cb: () => void) {
+    storyEndCallback = cb
   }
 
   /** Start the news broadcast after an optional initial delay (ms). */
@@ -77,5 +106,5 @@ export function useTVNews() {
     }
   }
 
-  return { start, stop }
+  return { start, stop, onStoryStart, onStoryEnd }
 }

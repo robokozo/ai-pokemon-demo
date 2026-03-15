@@ -45,6 +45,12 @@
 - State: Pinia
 - Styling: Tailwind CSS
 
+## VueUse
+
+- Prefer VueUse (`@vueuse/core`) utilities over manual equivalents — they self-clean on unmount.
+- Use `useTimeoutFn` instead of `setTimeout` / `clearTimeout` + `onUnmounted`.
+- Use `useIntervalFn` instead of `setInterval` / `clearInterval` + `onUnmounted`.
+
 ## Imports
 
 - Prefer absolute imports. Group: external → internal → styles.
@@ -91,6 +97,14 @@
   defineProps<{ id: string }>();
   ```
 - SFC section order: `<script>` → `<template>` → `<style>`.
+- Avoid boolean props. Prefer a string union `state` prop instead — it's more expressive and extensible:
+  ```ts
+  // Preferred
+  defineProps<{ state: "idle" | "active" | "disabled" }>();
+  // Not preferred
+  defineProps<{ isActive: boolean; isDisabled: boolean }>();
+  ```
+  This lets future states (e.g. `'malfunctioning'`, `'paused'`) be added without new props, and can often replace multiple booleans with a single value.
 - Prefer props/emits for all component communication. Avoid `defineExpose` + template refs to call component methods — if the parent needs to trigger behaviour, lift the state up to the parent and pass it down as a prop; the child reacts via `watch`. Reserve template refs for cases that genuinely require imperative access (e.g. DOM focus, canvas APIs).
 
 ## Type Safety
