@@ -3,6 +3,7 @@ import { TresCanvas } from "@tresjs/core"
 import { EffectComposerPmndrs, BloomPmndrs } from "@tresjs/post-processing"
 import Player from "../player/Player.vue"
 import DestinationMarker from "../player/DestinationMarker.vue"
+import OcclusionRevealer from "../camera/OcclusionRevealer.vue"
 import { useSceneSetup } from "./useSceneSetup"
 import type { SceneConfig } from "./useSceneSetup"
 
@@ -34,6 +35,7 @@ const { floorTiles, solidFloorColor, roomWidth, roomHeight, cameraPosition, came
         <BloomPmndrs :intensity="1.8" :luminance-threshold="0.6" :luminance-smoothing="0.1" :mipmap-blur="true" />
       </EffectComposerPmndrs>
 
+      <OcclusionRevealer />
       <Player :initial-position="spawnPosition" />
       <DestinationMarker v-if="gameState.tapDestination !== null" :position="[gameState.tapDestination.x, 0, gameState.tapDestination.z]" />
 

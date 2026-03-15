@@ -24,7 +24,7 @@ onBeforeRender(() => {
 </script>
 
 <template>
-  <TresGroup :position="[position.x, 0, position.z]">
+  <TresGroup :position="[position.x, 0, position.z]" :user-data="{ isPlayer: true }">
     <!-- Body -->
     <TresMesh :position="[0, 0.3, 0]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[0.4, 0.5, 0.3]" />

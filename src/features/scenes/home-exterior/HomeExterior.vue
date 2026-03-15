@@ -6,9 +6,24 @@ import OakTree from "../../props/outdoor/OakTree.vue"
 import PineTree from "../../props/outdoor/PineTree.vue"
 import Mailbox from "../../props/outdoor/Mailbox.vue"
 import Fence from "../../props/outdoor/Fence.vue"
+import StoneSlab from "../../props/outdoor/StoneSlab.vue"
+import FlowerBed from "../../props/outdoor/FlowerBed.vue"
+import Rock from "../../props/outdoor/Rock.vue"
 import Barrier from "../../props/Barrier.vue"
 import Doorway from "../../transitions/Doorway.vue"
 import InteractionIndicator from "../../ui/InteractionIndicator.vue"
+
+const leftFlowerBed = [
+  { position: [-0.3, 0.25, 0] as [number, number, number], size: [0.15, 0.2, 0.15] as [number, number, number], color: "#e06060" },
+  { position: [0.1, 0.22, 0.15] as [number, number, number], size: [0.12, 0.16, 0.12] as [number, number, number], color: "#e0e040" },
+  { position: [0.35, 0.27, -0.1] as [number, number, number], size: [0.14, 0.22, 0.14] as [number, number, number], color: "#e060e0" },
+]
+
+const rightFlowerBed = [
+  { position: [0.25, 0.24, 0.1] as [number, number, number], size: [0.13, 0.18, 0.13] as [number, number, number], color: "#6090e0" },
+  { position: [-0.15, 0.26, -0.1] as [number, number, number], size: [0.15, 0.22, 0.15] as [number, number, number], color: "#e06060" },
+  { position: [0.0, 0.2, 0.2] as [number, number, number], size: [0.11, 0.14, 0.11] as [number, number, number], color: "#e0e040" },
+]
 
 const sceneConfig: SceneConfig = {
   roomWidth: 30,
@@ -51,18 +66,9 @@ const BOUNDS = 11.5
     <Mailbox id="mailbox" name="Mailbox" :position="[2.5, 0, 7.0]" />
 
     <!-- ── Path from door (decorative stone slabs) ────────────────── -->
-    <TresMesh :position="[0, 0.03, 5.0]" :receive-shadow="true">
-      <TresBoxGeometry :args="[1.4, 0.06, 1.0]" />
-      <TresMeshLambertMaterial color="#b0a890" />
-    </TresMesh>
-    <TresMesh :position="[0, 0.03, 6.2]" :receive-shadow="true">
-      <TresBoxGeometry :args="[1.2, 0.06, 0.8]" />
-      <TresMeshLambertMaterial color="#a8a080" />
-    </TresMesh>
-    <TresMesh :position="[0.2, 0.03, 7.2]" :receive-shadow="true">
-      <TresBoxGeometry :args="[1.0, 0.06, 0.7]" />
-      <TresMeshLambertMaterial color="#b0a890" />
-    </TresMesh>
+    <StoneSlab :position="[0, 0.03, 5.0]" :size="[1.4, 0.06, 1.0]" />
+    <StoneSlab :position="[0, 0.03, 6.2]" :size="[1.2, 0.06, 0.8]" color="#a8a080" />
+    <StoneSlab :position="[0.2, 0.03, 7.2]" :size="[1.0, 0.06, 0.7]" />
 
     <!-- ── Garden fence (front yard) ──────────────────────────────── -->
     <Fence id="fence-front-l" name="Fence" :position="[-5.5, 0, 8.5]" :width="5" />
@@ -243,57 +249,12 @@ const BOUNDS = 11.5
     <PineTree id="be3i" :position="[15, 0, 9.5]" />
 
     <!-- ── Decorative flower patches ──────────────────────────────── -->
-    <!-- Small flower beds flanking the front path -->
-    <TresGroup :position="[-1.5, 0, 5.5]">
-      <TresMesh :position="[0, 0.08, 0]">
-        <TresBoxGeometry :args="[1.2, 0.16, 0.8]" />
-        <TresMeshLambertMaterial color="#4a3a2a" />
-      </TresMesh>
-      <TresMesh :position="[-0.3, 0.25, 0]">
-        <TresBoxGeometry :args="[0.15, 0.2, 0.15]" />
-        <TresMeshStandardMaterial color="#e06060" :emissive="'#e06060'" :emissive-intensity="0.3" />
-      </TresMesh>
-      <TresMesh :position="[0.1, 0.22, 0.15]">
-        <TresBoxGeometry :args="[0.12, 0.16, 0.12]" />
-        <TresMeshStandardMaterial color="#e0e040" :emissive="'#e0e040'" :emissive-intensity="0.3" />
-      </TresMesh>
-      <TresMesh :position="[0.35, 0.27, -0.1]">
-        <TresBoxGeometry :args="[0.14, 0.22, 0.14]" />
-        <TresMeshStandardMaterial color="#e060e0" :emissive="'#e060e0'" :emissive-intensity="0.3" />
-      </TresMesh>
-    </TresGroup>
-
-    <TresGroup :position="[1.5, 0, 5.5]">
-      <TresMesh :position="[0, 0.08, 0]">
-        <TresBoxGeometry :args="[1.2, 0.16, 0.8]" />
-        <TresMeshLambertMaterial color="#4a3a2a" />
-      </TresMesh>
-      <TresMesh :position="[0.25, 0.24, 0.1]">
-        <TresBoxGeometry :args="[0.13, 0.18, 0.13]" />
-        <TresMeshStandardMaterial color="#6090e0" :emissive="'#6090e0'" :emissive-intensity="0.3" />
-      </TresMesh>
-      <TresMesh :position="[-0.15, 0.26, -0.1]">
-        <TresBoxGeometry :args="[0.15, 0.22, 0.15]" />
-        <TresMeshStandardMaterial color="#e06060" :emissive="'#e06060'" :emissive-intensity="0.3" />
-      </TresMesh>
-      <TresMesh :position="[0.0, 0.2, 0.2]">
-        <TresBoxGeometry :args="[0.11, 0.14, 0.11]" />
-        <TresMeshStandardMaterial color="#e0e040" :emissive="'#e0e040'" :emissive-intensity="0.3" />
-      </TresMesh>
-    </TresGroup>
+    <FlowerBed :position="[-1.5, 0, 5.5]" :flowers="leftFlowerBed" />
+    <FlowerBed :position="[1.5, 0, 5.5]" :flowers="rightFlowerBed" />
 
     <!-- ── Rocks (decorative, no collision) ────────────────────────── -->
-    <TresMesh :position="[5, 0.12, 5]">
-      <TresBoxGeometry :args="[0.5, 0.24, 0.4]" />
-      <TresMeshLambertMaterial color="#8a8a7a" />
-    </TresMesh>
-    <TresMesh :position="[-9, 0.1, -2]">
-      <TresBoxGeometry :args="[0.6, 0.2, 0.5]" />
-      <TresMeshLambertMaterial color="#7a7a6a" />
-    </TresMesh>
-    <TresMesh :position="[6, 0.15, 10]">
-      <TresBoxGeometry :args="[0.4, 0.3, 0.35]" />
-      <TresMeshLambertMaterial color="#9a9a8a" />
-    </TresMesh>
+    <Rock :position="[5, 0.12, 5]" />
+    <Rock :position="[-9, 0.1, -2]" :size="[0.6, 0.2, 0.5]" color="#7a7a6a" />
+    <Rock :position="[6, 0.15, 10]" :size="[0.4, 0.3, 0.35]" color="#9a9a8a" />
   </SceneShell>
 </template>
