@@ -1,5 +1,6 @@
 import { defineStore } from "pinia"
 import { markRaw, ref } from "vue"
+import { PLAYER_HALF, NPC_COLLISION_RADIUS } from "./usePlayerMovement"
 export type EntityKind = "player" | "npc" | "prop"
 export type ColliderType = "solid" | "none"
 
@@ -84,30 +85,50 @@ export const useSceneStore = defineStore("scene", () => {
     return entities.value.filter((e) => e.kind !== "player")
   }
 
-  // Nudge a tap destination that lands inside a solid collider to the nearest
-  // point just outside it. Returns the adjusted position.
-  function clampTapDestination({ x, z }: { x: number; z: number }): { x: number; z: number } {
-    const PLAYER_HALF = 0.3
-    let cx = x
-    let cz = z
-    for (const entity of entities.value.filter((e) => e.collider === "solid")) {
-      if (entity.colliderSize !== undefined) {
-        const { hw, hd } = entity.colliderSize
-        const ox = cx - entity.position.x
-        const oz = cz - entity.position.z
-        const overlapX = PLAYER_HALF + hw - Math.abs(ox)
-        const overlapZ = PLAYER_HALF + hd - Math.abs(oz)
-        if (overlapX > 0 && overlapZ > 0) {
-          // Push out along the axis of least penetration
-          if (overlapX < overlapZ) {
-            cx += overlapX * Math.sign(ox)
-          } else {
-            cz += overlapZ * Math.sign(oz)
+  // March a ray from (fromX, fromZ) toward (toX, toZ) and return the last
+  // position along the ray that does not overlap any solid entity.
+  function resolveDestination(fromX: number, fromZ: number, toX: number, toZ: number): { x: number; z: number } {
+    const dx = toX - fromX
+    const dz = toZ - fromZ
+    const totalDist = Math.sqrt(dx * dx + dz * dz)
+    if (totalDist === 0) return { x: fromX, z: fromZ }
+
+    const nx = dx / totalDist
+    const nz = dz / totalDist
+    const STEP = 0.1
+
+    const solidEntities = getInteractables().filter((e) => e.collider === "solid")
+
+    function isOverlapping(x: number, z: number): boolean {
+      for (const entity of solidEntities) {
+        if (entity.colliderSize !== undefined) {
+          const { hw, hd } = entity.colliderSize
+          if (Math.abs(x - entity.position.x) < PLAYER_HALF + hw && Math.abs(z - entity.position.z) < PLAYER_HALF + hd) {
+            return true
+          }
+        } else {
+          if (Math.sqrt((x - entity.position.x) ** 2 + (z - entity.position.z) ** 2) < NPC_COLLISION_RADIUS) {
+            return true
           }
         }
       }
+      return false
     }
-    return { x: cx, z: cz }
+
+    let lastX = fromX
+    let lastZ = fromZ
+    let traveled = 0
+
+    while (traveled < totalDist) {
+      traveled = Math.min(traveled + STEP, totalDist)
+      const cx = fromX + nx * traveled
+      const cz = fromZ + nz * traveled
+      if (isOverlapping(cx, cz)) break
+      lastX = cx
+      lastZ = cz
+    }
+
+    return { x: lastX, z: lastZ }
   }
 
   function updateNearbyEntity() {
@@ -145,7 +166,7 @@ export const useSceneStore = defineStore("scene", () => {
     clearTapDestination,
     getPlayer,
     getInteractables,
-    clampTapDestination,
+    resolveDestination,
     updateNearbyEntity,
   }
 })

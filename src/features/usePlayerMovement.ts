@@ -4,8 +4,8 @@ import { useSceneStore } from "./useSceneStore"
 import type { EntityPosition } from "./useSceneStore"
 
 const MOVE_SPEED = 0.05
-const NPC_COLLISION_RADIUS = 0.7
-const PLAYER_HALF = 0.3
+export const NPC_COLLISION_RADIUS = 0.7
+export const PLAYER_HALF = 0.3
 const ARRIVE_THRESHOLD = 0.12
 const STUCK_LIMIT = 10 // frames without progress toward destination before cancelling
 

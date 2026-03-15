@@ -59,17 +59,6 @@ const cameraLookAt = computed<[number, number, number]>(() => {
 })
 
 // ── Tap / click-to-move ───────────────────────────────────────────────────────
-function clampToRoomBounds(x: number, z: number) {
-  const minX = -4.75
-  const maxX = 4.75
-  const minZ = -3.75
-  const maxZ = 3.75
-  return {
-    x: Math.max(minX, Math.min(maxX, x)),
-    z: Math.max(minZ, Math.min(maxZ, z)),
-  }
-}
-
 function handlePointerDown(event: PointerEvent) {
   if (store.paused === true) return
   if (!(event.target instanceof HTMLCanvasElement)) return
@@ -96,9 +85,11 @@ function handlePointerDown(event: PointerEvent) {
   const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint)
 
   if (hit !== null) {
-    const bounded = clampToRoomBounds(worldPoint.x, worldPoint.z)
-    const clamped = store.clampTapDestination(bounded)
-    store.setTapDestination({ x: clamped.x, y: 0, z: clamped.z })
+    const player = store.getPlayer()
+    const fromX = player !== null ? player.position.x : 0
+    const fromZ = player !== null ? player.position.z : 0
+    const resolved = store.resolveDestination(fromX, fromZ, worldPoint.x, worldPoint.z)
+    store.setTapDestination({ x: resolved.x, y: 0, z: resolved.z })
   }
 }
 
