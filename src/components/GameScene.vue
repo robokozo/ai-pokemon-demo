@@ -3,9 +3,10 @@ import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { TresCanvas } from "@tresjs/core";
 import * as THREE from "three";
 import { useGameWorld, ROOM_WIDTH, ROOM_HEIGHT } from "../composables/useGameWorld";
-import { useTVNews } from "../composables/useTVNews";
 import { useVoice } from "../composables/useVoice";
 import DialogBox from "./DialogBox.vue";
+import InteractionIndicator from "./InteractionIndicator.vue";
+import GameTV from "./GameTV.vue";
 import { useMediaControls } from "@vueuse/core";
 
 // ── Background music ──────────────────────────────────────────────────────────
@@ -110,22 +111,12 @@ const nearTV = computed(() => {
   return Math.sqrt(dx * dx + dz * dz) < TV_INTERACT_DISTANCE;
 });
 
-const tvOn = ref(false);
-const tvNews = useTVNews();
-const TV_INITIAL_DELAY_MS = 800;
-const TV_RESUME_DELAY_MS = 4000;
-let resumeTimerId: ReturnType<typeof setTimeout> | null = null;
+const tvRef = ref<InstanceType<typeof GameTV> | null>(null);
+const tvOn = computed(() => tvRef.value?.isOn === true);
 
 function toggleTV() {
-  tvOn.value = !tvOn.value;
-  if (tvOn.value === true) {
-    tvNews.start(TV_INITIAL_DELAY_MS);
-  } else {
-    if (resumeTimerId !== null) {
-      clearTimeout(resumeTimerId);
-      resumeTimerId = null;
-    }
-    tvNews.stop();
+  if (tvRef.value !== null) {
+    tvRef.value.toggle();
   }
 }
 
@@ -163,26 +154,7 @@ function handleInteract(e: KeyboardEvent) {
 }
 
 // ── TV speech – pause during Mom dialog, resume after ─────────────────────────
-watch(dialogOpen, (isOpen) => {
-  if (isOpen === true) {
-    // Dialog opened: immediately stop TV speech and cancel any pending resume
-    if (resumeTimerId !== null) {
-      clearTimeout(resumeTimerId);
-      resumeTimerId = null;
-    }
-    tvNews.stop();
-  } else {
-    // Dialog closed: if TV is on, resume after a short delay
-    if (tvOn.value === true) {
-      resumeTimerId = setTimeout(() => {
-        resumeTimerId = null;
-        if (tvOn.value === true) {
-          tvNews.start();
-        }
-      }, TV_RESUME_DELAY_MS);
-    }
-  }
-});
+// (handled internally by GameTV via its dialogOpen prop)
 
 // ── Animation loop ────────────────────────────────────────────────────────────
 let animationId: number | null = null;
@@ -254,8 +226,6 @@ onUnmounted(() => {
   window.removeEventListener("keydown", boundHandleInteract);
   window.removeEventListener("keyup", boundOnKeyUp);
   if (animationId !== null) cancelAnimationFrame(animationId);
-  if (resumeTimerId !== null) clearTimeout(resumeTimerId);
-  tvNews.stop();
 });
 
 // ── Scene helpers ─────────────────────────────────────────────────────────────
@@ -529,71 +499,19 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         <TresMeshLambertMaterial color="#888888" />
       </TresMesh>
       <!-- Interaction indicator above radio -->
-      <TresMesh
-        v-if="nearRadio && !dialogOpen"
+      <InteractionIndicator
+        v-if="nearRadio === true && dialogOpen !== true"
         :position="[RADIO_POSITION.x, 1.35, RADIO_POSITION.z]"
-      >
-        <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
-        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
-      </TresMesh>
-      <TresMesh
-        v-if="nearRadio && !dialogOpen"
-        :position="[RADIO_POSITION.x, 1.03, RADIO_POSITION.z]"
-      >
-        <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
-        <TresMeshLambertMaterial color="#ffd700" :emissive="'#ffd700'" :emissive-intensity="0.5" />
-      </TresMesh>
+      />
 
       <!-- ── TV ── -->
-      <!-- Group handles position + 90° clockwise rotation so internal coords are local -->
-      <TresGroup :position="[TV_POSITION.x, 0, TV_POSITION.z]" :rotation="[0, -Math.PI / 2, 0]">
-        <!-- TV stand / cabinet -->
-        <TresMesh :position="[0, 0.25, 0]" :cast-shadow="true" :receive-shadow="true">
-          <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />
-          <TresMeshLambertMaterial color="#5a3e28" />
-        </TresMesh>
-        <!-- TV body (housing) -->
-        <TresMesh :position="[0, 1.0, 0]" :cast-shadow="true">
-          <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />
-          <TresMeshLambertMaterial color="#1a1a1a" />
-        </TresMesh>
-        <!-- TV screen – glows when on -->
-        <TresMesh :position="[0, 1.0, 0.145]">
-          <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
-          <TresMeshLambertMaterial
-            :color="tvOn ? '#a8d8ff' : '#111111'"
-            :emissive="tvOn ? '#4ab0ff' : '#000000'"
-            :emissive-intensity="tvOn ? 1.2 : 0"
-          />
-        </TresMesh>
-        <!-- TV power indicator light -->
-        <TresMesh :position="[0.62, 0.57, 0.145]">
-          <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
-          <TresMeshLambertMaterial
-            :color="tvOn ? '#00ff88' : '#1a4a2a'"
-            :emissive="tvOn ? '#00ff88' : '#000000'"
-            :emissive-intensity="tvOn ? 0.8 : 0"
-          />
-        </TresMesh>
-        <!-- Interaction indicator above TV (yellow "!") –
-             positioned above TV top (y>1.45) and in front of screen (z=0.20) to avoid clipping -->
-        <TresMesh v-if="nearTV && !dialogOpen" :position="[0, 1.87, 0.2]">
-          <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
-          <TresMeshLambertMaterial
-            color="#ffd700"
-            :emissive="'#ffd700'"
-            :emissive-intensity="0.5"
-          />
-        </TresMesh>
-        <TresMesh v-if="nearTV && !dialogOpen" :position="[0, 1.55, 0.2]">
-          <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
-          <TresMeshLambertMaterial
-            color="#ffd700"
-            :emissive="'#ffd700'"
-            :emissive-intensity="0.5"
-          />
-        </TresMesh>
-      </TresGroup>
+      <GameTV
+        ref="tvRef"
+        :position="[TV_POSITION.x, 0, TV_POSITION.z]"
+        :rotation="[0, -Math.PI / 2, 0]"
+        :dialog-open="dialogOpen"
+        :show-indicator="nearTV === true && dialogOpen !== true"
+      />
 
       <!-- ── Mom NPC ── -->
       <TresGroup v-for="npc in gameState.npcs" :key="npc.id">
@@ -613,29 +531,11 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
           <TresMeshLambertMaterial color="#6b3a2a" />
         </TresMesh>
 
-        <!-- Interaction indicator (bouncing "!" when near) -->
-        <TresMesh
-          v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
+        <!-- Interaction indicator ("!" when near) -->
+        <InteractionIndicator
+          v-if="gameState.nearbyNPC?.id === npc.id && dialogOpen !== true"
           :position="[npc.position.x, 1.4, npc.position.z]"
-        >
-          <TresBoxGeometry :args="[0.12, 0.32, 0.05]" />
-          <TresMeshLambertMaterial
-            color="#ffd700"
-            :emissive="'#ffd700'"
-            :emissive-intensity="0.5"
-          />
-        </TresMesh>
-        <TresMesh
-          v-if="gameState.nearbyNPC?.id === npc.id && !dialogOpen"
-          :position="[npc.position.x, 1.08, npc.position.z]"
-        >
-          <TresBoxGeometry :args="[0.12, 0.1, 0.05]" />
-          <TresMeshLambertMaterial
-            color="#ffd700"
-            :emissive="'#ffd700'"
-            :emissive-intensity="0.5"
-          />
-        </TresMesh>
+        />
       </TresGroup>
     </TresCanvas>
 
