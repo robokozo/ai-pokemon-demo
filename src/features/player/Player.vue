@@ -1,24 +1,51 @@
 <script setup lang="ts">
 import { shallowReactive, onMounted, onUnmounted } from "vue"
+import { useLoop } from "@tresjs/core"
 import { useSceneStore } from "../useSceneStore"
+import { useControls } from "../useControls"
+import { usePlayerMovement } from "../usePlayerMovement"
 
 interface Props {
   initialPosition?: [number, number, number]
+  controlsOverride?: ReturnType<typeof useControls>
 }
 
-const { initialPosition = [0, 0, 1] } = defineProps<Props>()
+const { initialPosition = [0, 0, 1], controlsOverride } = defineProps<Props>()
 
 const store = useSceneStore()
 
 const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
 
-const entity = { id: "player", name: "Player", kind: "player" as const, position }
+const entity = { id: "player", name: "Player", kind: "player" as const, collider: "solid" as const, position }
+
+const controls = controlsOverride !== undefined ? controlsOverride : useControls()
+const movement = usePlayerMovement({ controls, position })
+
+function onKeyDown(e: KeyboardEvent) {
+  controls.onKeyDown(e)
+}
+function onKeyUp(e: KeyboardEvent) {
+  controls.onKeyUp(e)
+}
 
 onMounted(() => {
   store.register(entity)
+  if (controlsOverride === undefined) {
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("keyup", onKeyUp)
+  }
 })
 onUnmounted(() => {
   store.unregister({ id: "player" })
+  if (controlsOverride === undefined) {
+    window.removeEventListener("keydown", onKeyDown)
+    window.removeEventListener("keyup", onKeyUp)
+  }
+})
+
+const { onBeforeRender } = useLoop()
+onBeforeRender(() => {
+  movement.tick()
 })
 </script>
 

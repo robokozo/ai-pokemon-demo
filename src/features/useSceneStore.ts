@@ -2,6 +2,7 @@ import { defineStore } from "pinia"
 import { ref } from "vue"
 
 export type EntityKind = "player" | "npc" | "prop"
+export type ColliderType = "solid" | "none"
 
 export interface EntityPosition {
   x: number
@@ -13,6 +14,11 @@ export interface SceneEntity {
   id: string
   name: string
   kind: EntityKind
+  collider: ColliderType
+  /** AABB half-extents (X, Z) for box collision. Falls back to circle when absent. */
+  colliderSize?: { hw: number; hd: number }
+  /** Only entities with interactive: true set nearbyEntity and show HUD actions. */
+  interactive?: true
   position: EntityPosition
 }
 
@@ -22,6 +28,11 @@ export const useSceneStore = defineStore("scene", () => {
   const entities = ref<Array<SceneEntity>>([])
   const nearbyEntity = ref<SceneEntity | null>(null)
   const tapDestination = ref<EntityPosition | null>(null)
+  const paused = ref(false)
+
+  function setPaused(value: boolean) {
+    paused.value = value
+  }
 
   function register(entity: SceneEntity) {
     entities.value.push(entity)
@@ -46,7 +57,7 @@ export const useSceneStore = defineStore("scene", () => {
     return entities.value.find((e) => e.kind === "player") ?? null
   }
 
-  function getNPCs(): Array<SceneEntity> {
+  function getInteractables(): Array<SceneEntity> {
     return entities.value.filter((e) => e.kind !== "player")
   }
 
@@ -57,12 +68,13 @@ export const useSceneStore = defineStore("scene", () => {
       return
     }
     nearbyEntity.value = null
-    for (const npc of getNPCs()) {
-      const dx = player.position.x - npc.position.x
-      const dz = player.position.z - npc.position.z
+    for (const entity of getInteractables()) {
+      if (entity.interactive !== true) continue
+      const dx = player.position.x - entity.position.x
+      const dz = player.position.z - entity.position.z
       const dist = Math.sqrt(dx * dx + dz * dz)
       if (dist <= INTERACTION_DISTANCE) {
-        nearbyEntity.value = npc
+        nearbyEntity.value = entity
         break
       }
     }
@@ -72,12 +84,14 @@ export const useSceneStore = defineStore("scene", () => {
     entities,
     nearbyEntity,
     tapDestination,
+    paused,
+    setPaused,
     register,
     unregister,
     setTapDestination,
     clearTapDestination,
     getPlayer,
-    getNPCs,
+    getInteractables,
     updateNearbyEntity,
   }
 })

@@ -1,18 +1,14 @@
 import { useSceneStore } from "./useSceneStore"
+import type { EntityPosition } from "./useSceneStore"
 import { useControls } from "./useControls"
 
 const MOVE_SPEED = 0.05
 const NPC_COLLISION_RADIUS = 0.7
+const PLAYER_HALF = 0.3
 const ARRIVE_THRESHOLD = 0.12
 const STUCK_LIMIT = 30 // frames (~0.5s at 60fps)
 
-// Room bounds — player cannot walk outside these half-extents
-export const ROOM_WIDTH = 10
-export const ROOM_HEIGHT = 8
-const HALF_W = ROOM_WIDTH / 2 - 0.6
-const HALF_H = ROOM_HEIGHT / 2 - 0.6
-
-export function usePlayerMovement({ controls }: { controls: ReturnType<typeof useControls> }) {
+export function usePlayerMovement({ controls, position }: { controls: ReturnType<typeof useControls>; position: EntityPosition }) {
   const store = useSceneStore()
   const { keys } = controls
 
@@ -21,10 +17,9 @@ export function usePlayerMovement({ controls }: { controls: ReturnType<typeof us
   let lastZ = 0
 
   function tick() {
-    const player = store.getPlayer()
-    if (player === null) return
+    if (store.paused === true) return
 
-    const pos = player.position
+    const pos = position
     let dx = 0
     let dz = 0
 
@@ -74,18 +69,30 @@ export function usePlayerMovement({ controls }: { controls: ReturnType<typeof us
     lastX = pos.x
     lastZ = pos.z
 
-    const newX = Math.max(-HALF_W, Math.min(HALF_W, pos.x + dx))
-    const newZ = Math.max(-HALF_H, Math.min(HALF_H, pos.z + dz))
+    const newX = pos.x + dx
+    const newZ = pos.z + dz
 
-    // NPC collision
+    // Block against any entity registered as "solid"
     let isBlocked = false
-    for (const npc of store.getNPCs()) {
-      const ndx = newX - npc.position.x
-      const ndz = newZ - npc.position.z
-      const dist = Math.sqrt(ndx * ndx + ndz * ndz)
-      if (dist < NPC_COLLISION_RADIUS) {
-        isBlocked = true
-        break
+    for (const entity of store.getInteractables().filter((e) => e.collider === "solid")) {
+      if (entity.colliderSize !== undefined) {
+        // AABB check for rectangular furniture
+        const { hw, hd } = entity.colliderSize
+        const ox = Math.abs(newX - entity.position.x)
+        const oz = Math.abs(newZ - entity.position.z)
+        if (ox < PLAYER_HALF + hw && oz < PLAYER_HALF + hd) {
+          isBlocked = true
+          break
+        }
+      } else {
+        // Circle check for NPCs
+        const ndx = newX - entity.position.x
+        const ndz = newZ - entity.position.z
+        const dist = Math.sqrt(ndx * ndx + ndz * ndz)
+        if (dist < NPC_COLLISION_RADIUS) {
+          isBlocked = true
+          break
+        }
       }
     }
 

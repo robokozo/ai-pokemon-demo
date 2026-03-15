@@ -16,7 +16,7 @@ const { initialPosition = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogO
 
 const store = useSceneStore()
 const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
-const entity = { id: "tv", name: "TV", kind: "prop" as const, position }
+const entity = { id: "tv", name: "TV", kind: "prop" as const, collider: "none" as const, interactive: true as const, position }
 
 onMounted(() => {
   store.register(entity)

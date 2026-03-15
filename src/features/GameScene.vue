@@ -4,8 +4,6 @@ import { TresCanvas } from "@tresjs/core"
 import * as THREE from "three"
 import { useSceneStore } from "./useSceneStore"
 import type { SceneEntity } from "./useSceneStore"
-import { useControls } from "./useControls"
-import { usePlayerMovement } from "./usePlayerMovement"
 import { useVoice } from "./useVoice"
 import DialogBox from "./ui/DialogBox.vue"
 import InteractionIndicator from "./ui/InteractionIndicator.vue"
@@ -88,8 +86,6 @@ watch(ended, async (isEnded) => {
 
 // ── Game world state ──────────────────────────────────────────────────────────
 const store = useSceneStore()
-const controls = useControls()
-const movement = usePlayerMovement({ controls })
 
 // ── Radio interaction ────────────────────────────────────────────────────────
 function toggleMusic() {
@@ -131,10 +127,12 @@ const activeNPC = ref<SceneEntity | null>(null)
 function openDialog(npc: SceneEntity) {
   activeNPC.value = npc
   dialogOpen.value = true
+  store.setPaused(true)
 }
 
 function closeDialog() {
   dialogOpen.value = false
+  store.setPaused(false)
 }
 
 function interact() {
@@ -158,16 +156,6 @@ function handleInteract(e: KeyboardEvent) {
 
 // ── TV speech – pause during Mom dialog, resume after ─────────────────────────
 // (handled internally by GameTV via its dialogOpen prop)
-
-// ── Animation loop ────────────────────────────────────────────────────────────
-let animationId: number | null = null
-
-function gameLoop() {
-  if (dialogOpen.value !== true) {
-    movement.tick()
-  }
-  animationId = requestAnimationFrame(gameLoop)
-}
 
 // ── Tap / click-to-move ───────────────────────────────────────────────────────
 // These must match the TresPerspectiveCamera props used in the template below.
@@ -210,24 +198,15 @@ function handlePointerDown(event: PointerEvent) {
   }
 }
 
-const boundOnKeyDown = (e: KeyboardEvent) => controls.onKeyDown(e)
-const boundOnKeyUp = (e: KeyboardEvent) => controls.onKeyUp(e)
 const boundHandleInteract = (e: KeyboardEvent) => handleInteract(e)
 
 onMounted(() => {
-  window.addEventListener("keydown", boundOnKeyDown)
   window.addEventListener("keydown", boundHandleInteract)
-  window.addEventListener("keyup", boundOnKeyUp)
-  gameLoop()
-
   volume.value = 0.35
 })
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", boundOnKeyDown)
   window.removeEventListener("keydown", boundHandleInteract)
-  window.removeEventListener("keyup", boundOnKeyUp)
-  if (animationId !== null) cancelAnimationFrame(animationId)
 })
 
 // Camera: fixed offset that follows the player

@@ -12,7 +12,7 @@ const store = useSceneStore()
 
 const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
 
-const entity = { id: "mom", name: "Mom", kind: "npc" as const, position }
+const entity = { id: "mom", name: "Mom", kind: "npc" as const, collider: "solid" as const, interactive: true as const, position }
 
 onMounted(() => {
   store.register(entity)

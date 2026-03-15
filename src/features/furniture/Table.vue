@@ -1,13 +1,36 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from "vue"
+import { useSceneStore } from "../useSceneStore"
+
 interface Props {
-  position?: [number, number, number]
+  initialPosition?: [number, number, number]
 }
 
-const { position = [0, 0, 0] } = defineProps<Props>()
+const { initialPosition = [0, 0, 0] } = defineProps<Props>()
+
+const store = useSceneStore()
+const position = { x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] }
+
+const entity = {
+  id: "table",
+  name: "Table",
+  kind: "prop" as const,
+  collider: "solid" as const,
+  // Surface geometry: 1.2 × 0.8 → half-extents 0.6, 0.4
+  colliderSize: { hw: 0.6, hd: 0.4 },
+  position,
+}
+
+onMounted(() => {
+  store.register(entity)
+})
+onUnmounted(() => {
+  store.unregister({ id: "table" })
+})
 </script>
 
 <template>
-  <TresGroup :position="position">
+  <TresGroup :position="initialPosition">
     <!-- Surface -->
     <TresMesh :position="[0, 0.55, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[1.2, 0.1, 0.8]" />
