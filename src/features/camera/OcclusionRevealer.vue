@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { useLoop, useTres } from "@tresjs/core"
+import { useLoop } from "@tresjs/core"
 import * as THREE from "three"
 import { useEntityStore } from "../entities/useEntityStore"
+import { useSceneNavigation } from "../scenes/useSceneNavigation"
 
 const OCCLUDED_OPACITY = 0.25
 const ENTITY_ROOT_CHILD_LIMIT = 20
 
-const { scene, camera } = useTres()
 const entityStore = useEntityStore()
+const sceneNav = useSceneNavigation()
 
 const raycaster = new THREE.Raycaster()
+const camPosition = new THREE.Vector3()
 const playerTarget = new THREE.Vector3()
 const direction = new THREE.Vector3()
 
@@ -19,7 +21,6 @@ interface SavedMaterial {
   isTransparent: boolean
 }
 
-// Groups currently made transparent, keyed by their entity root object
 const occludedGroups = new Map<THREE.Object3D, Array<SavedMaterial>>()
 
 function isPlayerDescendant(object: THREE.Object3D): boolean {
@@ -33,8 +34,8 @@ function isPlayerDescendant(object: THREE.Object3D): boolean {
 
 /**
  * Walk up from a hit mesh to find the entity root group.
- * Heuristic: the first ancestor Group whose parent has many children
- * (i.e. the SceneShell container) or is the Scene itself.
+ * Stops when the parent is the Scene, null, or a large container group
+ * (like SceneShell's wrapper which has many children).
  */
 function findEntityRoot(mesh: THREE.Object3D): THREE.Object3D {
   let current: THREE.Object3D | null = mesh
@@ -55,6 +56,7 @@ function setGroupOpacity(root: THREE.Object3D, opacity: number): Array<SavedMate
       saved.push({ material: mat, opacity: mat.opacity, isTransparent: mat.transparent })
       mat.transparent = true
       mat.opacity = opacity
+      mat.needsUpdate = true
     }
   })
   return saved
@@ -64,22 +66,25 @@ function restoreGroup(savedMaterials: Array<SavedMaterial>) {
   for (const { material, opacity, isTransparent } of savedMaterials) {
     material.opacity = opacity
     material.transparent = isTransparent
+    material.needsUpdate = true
   }
 }
 
 const { onBeforeRender } = useLoop()
 
-onBeforeRender(() => {
+onBeforeRender(({ scene }) => {
   const player = entityStore.getPlayer()
-  const cam = camera.value
+  const cam = sceneNav.camera
   const sceneObj = scene.value
-  if (player === null || cam == null || sceneObj == null) return
+  if (player === null || cam === null || sceneObj == null) return
 
+  // Compute camera position ourselves from the same offset data SceneShell uses
+  camPosition.set(player.position.x + cam.offset.x, cam.offset.y, player.position.z + cam.offset.z)
   playerTarget.set(player.position.x, 0.5, player.position.z)
-  direction.copy(playerTarget).sub(cam.position).normalize()
-  const distanceToPlayer = cam.position.distanceTo(playerTarget)
+  direction.copy(playerTarget).sub(camPosition).normalize()
+  const distanceToPlayer = camPosition.distanceTo(playerTarget)
 
-  raycaster.set(cam.position, direction)
+  raycaster.set(camPosition, direction)
   raycaster.far = distanceToPlayer - 0.3
 
   const intersections = raycaster.intersectObjects(sceneObj.children, true)

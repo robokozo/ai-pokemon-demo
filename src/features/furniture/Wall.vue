@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useEntity } from "../useEntity"
 
-const WALL_HEIGHT = 0.75
+const WALL_HEIGHT = 2.5
 
 interface Props {
   id?: string
