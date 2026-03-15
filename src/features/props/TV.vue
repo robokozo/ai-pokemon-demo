@@ -2,7 +2,7 @@
 import { ref, computed, watch } from "vue"
 import { useLoop } from "@tresjs/core"
 import { useTimeoutFn } from "@vueuse/core"
-import { useTVNews } from "../../composables/useTVNews"
+import { useTVNews } from "./useTVNews"
 
 interface Props {
   position?: [number, number, number]

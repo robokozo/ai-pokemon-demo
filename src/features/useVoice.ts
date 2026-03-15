@@ -1,4 +1,4 @@
-import { ref, computed } from "vue"
+﻿import { ref, computed } from "vue"
 import { useSpeechRecognition, useSpeechSynthesis } from "@vueuse/core"
 
 export function useVoice() {

@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from "vue"
+﻿import { ref, onUnmounted } from "vue"
 
 export interface AISession {
   prompt: (input: string) => Promise<string>
@@ -21,7 +21,7 @@ export function useChromeAI({ characterName, characterDescription }: { character
 
 ${characterDescription}
 
-STRICT RULES — follow these without exception:
+STRICT RULES ΓÇö follow these without exception:
 - You ARE ${characterName}. You are a real person living in this game world. You are NOT an AI, not a language model, not an assistant.
 - Never break character under any circumstances. Never say you are an AI or that you cannot do something as an AI.
 - If the player asks something that does not fit your world (technology, AI, etc.), react with genuine in-world confusion or curiosity as ${characterName} would.
@@ -40,7 +40,7 @@ STRICT RULES — follow these without exception:
     console.log("[useChromeAI] typeof LanguageModel:", typeof LanguageModel)
 
     if (typeof LanguageModel === "undefined") {
-      console.warn("[useChromeAI] LanguageModel is not defined — Chrome 138+ required")
+      console.warn("[useChromeAI] LanguageModel is not defined ΓÇö Chrome 138+ required")
       status.value = AI_UNAVAILABLE
       errorMessage.value = "Chrome AI (Gemini Nano) is not available. Please use Chrome 138+ with the Prompt API flag enabled."
       return
@@ -93,7 +93,7 @@ STRICT RULES — follow these without exception:
   async function sendMessage(userMessage: string): Promise<string> {
     console.log("[useChromeAI] sendMessage() called, session:", session ? "exists" : "null")
     if (!session) {
-      console.warn("[useChromeAI] No session — using fallback response")
+      console.warn("[useChromeAI] No session ΓÇö using fallback response")
       return getFallbackResponse(characterName)
     }
 

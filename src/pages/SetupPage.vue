@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SetupScreen from "../components/ui/SetupScreen.vue"
+import SetupScreen from "../features/ui/SetupScreen.vue"
 </script>
 
 <template>

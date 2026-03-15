@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from "vue"
-import { useChromeAI } from "../../composables/useChromeAI"
-import { useVoice } from "../../composables/useVoice"
+import { useChromeAI } from "./useChromeAI"
+import { useVoice } from "../useVoice"
 
 interface Props {
   npcName: string

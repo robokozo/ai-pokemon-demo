@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { RouterLink } from "vue-router"
-import VoiceDebug from "../components/ui/VoiceDebug.vue"
-import PromptDebug from "../components/ui/PromptDebug.vue"
+import VoiceDebug from "../features/ui/VoiceDebug.vue"
+import PromptDebug from "../features/ui/PromptDebug.vue"
 
 type DebugTab = "voice" | "prompt"
 const activeTab = ref<DebugTab>("voice")
