@@ -1,3 +1,5 @@
+export type VoiceGender = 'male' | 'female' | 'unknown'
+
 export type GoogleVoiceName =
   | 'Google Deutsch'
   | 'Google US English'
@@ -21,27 +23,32 @@ export type GoogleVoiceName =
 
 export type KnownVoiceName = GoogleVoiceName
 
-/** All known voices with their BCP-47 language tag */
-export const KNOWN_VOICES: Record<KnownVoiceName, string> = {
-  'Google Deutsch':                   'de-DE',
-  'Google US English':                'en-US',
-  'Google UK English Female':         'en-GB',
-  'Google UK English Male':           'en-GB',
-  'Google español':                   'es-ES',
-  'Google español de Estados Unidos': 'es-US',
-  'Google français':                  'fr-FR',
-  'Google हिन्दी':                    'hi-IN',
-  'Google Bahasa Indonesia':          'id-ID',
-  'Google italiano':                  'it-IT',
-  'Google 日本語':                     'ja-JP',
-  'Google 한국의':                     'ko-KR',
-  'Google Nederlands':                'nl-NL',
-  'Google polski':                    'pl-PL',
-  'Google português do Brasil':       'pt-BR',
-  'Google русский':                   'ru-RU',
-  'Google 普通话（中国大陆）':            'zh-CN',
-  'Google 粤語（香港）':                 'zh-HK',
-  'Google 國語（臺灣）':                 'zh-TW',
+interface VoiceMeta {
+  lang: string
+  gender: VoiceGender
+}
+
+/** All known voices with their BCP-47 language tag and gender */
+export const KNOWN_VOICES: Record<KnownVoiceName, VoiceMeta> = {
+  'Google Deutsch':                   { lang: 'de-DE', gender: 'female' },
+  'Google US English':                { lang: 'en-US', gender: 'female' },
+  'Google UK English Female':         { lang: 'en-GB', gender: 'female' },
+  'Google UK English Male':           { lang: 'en-GB', gender: 'male'   },
+  'Google español':                   { lang: 'es-ES', gender: 'male'   },
+  'Google español de Estados Unidos': { lang: 'es-US', gender: 'female' },
+  'Google français':                  { lang: 'fr-FR', gender: 'female' },
+  'Google हिन्दी':                    { lang: 'hi-IN', gender: 'female' },
+  'Google Bahasa Indonesia':          { lang: 'id-ID', gender: 'female' },
+  'Google italiano':                  { lang: 'it-IT', gender: 'female' },
+  'Google 日本語':                     { lang: 'ja-JP', gender: 'female' },
+  'Google 한국의':                     { lang: 'ko-KR', gender: 'female' },
+  'Google Nederlands':                { lang: 'nl-NL', gender: 'female' },
+  'Google polski':                    { lang: 'pl-PL', gender: 'female' },
+  'Google português do Brasil':       { lang: 'pt-BR', gender: 'female' },
+  'Google русский':                   { lang: 'ru-RU', gender: 'female' },
+  'Google 普通话（中国大陆）':            { lang: 'zh-CN', gender: 'female' },
+  'Google 粤語（香港）':                 { lang: 'zh-HK', gender: 'female' },
+  'Google 國語（臺灣）':                 { lang: 'zh-TW', gender: 'female' },
 }
 
 /**
@@ -51,3 +58,15 @@ export const KNOWN_VOICES: Record<KnownVoiceName, string> = {
 export function findVoice(name: KnownVoiceName): SpeechSynthesisVoice | undefined {
   return speechSynthesis.getVoices().find((v) => v.name === name)
 }
+
+/**
+ * Returns all known voices matching the given gender that are currently
+ * loaded in the browser (i.e. present in speechSynthesis.getVoices()).
+ */
+export function findVoicesByGender(gender: VoiceGender): Array<SpeechSynthesisVoice> {
+  const available = speechSynthesis.getVoices()
+  return (Object.entries(KNOWN_VOICES) as Array<[KnownVoiceName, VoiceMeta]>)
+    .filter(([, meta]) => meta.gender === gender)
+    .flatMap(([name]) => available.filter((v) => v.name === name))
+}
+

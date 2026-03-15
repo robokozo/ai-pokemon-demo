@@ -33,6 +33,9 @@ for (let i = songs.length - 1; i > 0; i--) {
 
 const currentSongIndex = ref(0);
 const currentSrc = ref(songs[0].src);
+// Tracks whether the user has turned the radio on — separate from `playing`
+// because `playing` becomes false the moment a track ends naturally.
+const radioEnabled = ref(false);
 
 const audioEl = ref<HTMLAudioElement>();
 const { playing, volume, ended } = useMediaControls(audioEl, { src: currentSrc });
@@ -53,17 +56,17 @@ async function playDJAnnouncement(justFinishedIndex: number, nextIndex: number) 
 
 // Auto-advance to the next song when the current one finishes
 watch(ended, async (isEnded) => {
-  if (isEnded && playing.value) {
-    const prevIndex = currentSongIndex.value;
-    const nextIndex = (prevIndex + 1) % songs.length;
-    currentSongIndex.value = nextIndex;
+  if (isEnded !== true || radioEnabled.value !== true) return;
 
-    // DJ announcement before the next track
-    await playDJAnnouncement(prevIndex, nextIndex);
+  const prevIndex = currentSongIndex.value;
+  const nextIndex = (prevIndex + 1) % songs.length;
+  currentSongIndex.value = nextIndex;
 
-    currentSrc.value = songs[nextIndex].src;
-    playing.value = true;
-  }
+  // DJ announcement before the next track
+  await playDJAnnouncement(prevIndex, nextIndex);
+
+  currentSrc.value = songs[nextIndex].src;
+  playing.value = true;
 });
 
 // ── Game world state ──────────────────────────────────────────────────────────
@@ -80,12 +83,14 @@ const nearRadio = computed(() => {
 });
 
 function toggleMusic() {
-  if (playing.value) {
+  if (radioEnabled.value) {
+    radioEnabled.value = false;
     playing.value = false;
   } else {
     // Cycle to next song each time the radio is turned on
     currentSongIndex.value = (currentSongIndex.value + 1) % songs.length;
     currentSrc.value = songs[currentSongIndex.value].src;
+    radioEnabled.value = true;
     playing.value = true;
   }
 }
@@ -497,9 +502,9 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <TresMesh :position="[RADIO_POSITION.x + 0.06, 0.72, RADIO_POSITION.z + 0.145]">
         <TresCylinderGeometry :args="[0.025, 0.025, 0.015, 8]" />
         <TresMeshLambertMaterial
-          :color="playing ? '#00ff88' : '#1a4a2a'"
-          :emissive="playing ? '#00ff88' : '#000000'"
-          :emissive-intensity="playing ? 0.8 : 0"
+          :color="radioEnabled ? '#00ff88' : '#1a4a2a'"
+          :emissive="radioEnabled ? '#00ff88' : '#000000'"
+          :emissive-intensity="radioEnabled ? 0.8 : 0"
         />
       </TresMesh>
       <!-- Antenna -->
@@ -649,11 +654,11 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <button
         v-else-if="nearRadio && !dialogOpen"
         class="interaction-prompt"
-        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
+        :aria-label="radioEnabled ? 'Turn off radio' : 'Turn on radio'"
         @pointerdown.stop.prevent="interact"
       >
         <span class="prompt-icon">📻</span>
-        <span>{{ playing ? "Turn off" : "Turn on" }} radio</span>
+        <span>{{ radioEnabled ? "Turn off" : "Turn on" }} radio</span>
         <kbd class="key-hint">E</kbd>
       </button>
       <button
@@ -681,10 +686,10 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <button
         v-if="nearRadio && !dialogOpen"
         class="npc-tap-btn radio-tap-btn"
-        :aria-label="playing ? 'Turn off radio' : 'Turn on radio'"
+        :aria-label="radioEnabled ? 'Turn off radio' : 'Turn on radio'"
         @pointerdown.stop.prevent="interact"
       >
-        📻 {{ playing ? "Turn off radio" : "Turn on radio" }}
+        📻 {{ radioEnabled ? "Turn off radio" : "Turn on radio" }}
       </button>
       <button
         v-if="nearTV && !dialogOpen"
