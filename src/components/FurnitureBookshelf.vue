@@ -1,0 +1,23 @@
+<script setup lang="ts">
+interface Props {
+  position?: [number, number, number];
+}
+
+const { position = [0, 0, 0] } = defineProps<Props>();
+</script>
+
+<template>
+  <TresGroup :position="position">
+    <!-- Shelf unit -->
+    <TresMesh :position="[0, 0.5, 0]" :cast-shadow="true" :receive-shadow="true">
+      <TresBoxGeometry :args="[0.4, 1.0, 2.0]" />
+      <TresMeshLambertMaterial color="#6b4c2a" />
+    </TresMesh>
+
+    <!-- Book spines -->
+    <TresMesh :position="[0, 0.5, 0]" :cast-shadow="true">
+      <TresBoxGeometry :args="[0.05, 0.9, 1.8]" />
+      <TresMeshLambertMaterial color="#e8d0c0" />
+    </TresMesh>
+  </TresGroup>
+</template>

@@ -2,13 +2,16 @@
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { TresCanvas } from "@tresjs/core";
 import * as THREE from "three";
-import { useGameWorld, ROOM_WIDTH, ROOM_HEIGHT } from "../composables/useGameWorld";
+import { useGameWorld } from "../composables/useGameWorld";
 import { useVoice } from "../composables/useVoice";
 import DialogBox from "./DialogBox.vue";
 import InteractionIndicator from "./InteractionIndicator.vue";
 import GameTV from "./GameTV.vue";
 import GameRadio from "./GameRadio.vue";
 import GameMomNpc from "./GameMomNpc.vue";
+import RoomPlayerBedroom from "./RoomPlayerBedroom.vue";
+import GamePlayer from "./GamePlayer.vue";
+import GameDestinationMarker from "./GameDestinationMarker.vue";
 import { useMediaControls } from "@vueuse/core";
 
 // ── Background music ──────────────────────────────────────────────────────────
@@ -168,7 +171,6 @@ function gameLoop() {
 const CAMERA_FOV = 45;
 const CAMERA_NEAR = 0.1;
 const CAMERA_FAR = 100;
-const DESTINATION_MARKER_HEIGHT = 0.04;
 
 function handlePointerDown(event: PointerEvent) {
   // Ignore while a dialog is open
@@ -225,64 +227,6 @@ onUnmounted(() => {
   if (animationId !== null) cancelAnimationFrame(animationId);
 });
 
-// ── Scene helpers ─────────────────────────────────────────────────────────────
-
-// Floor tile colors (checkerboard)
-const floorTiles = computed(() => {
-  const tiles: Array<{ x: number; z: number; color: string }> = [];
-  for (let x = 0; x < ROOM_WIDTH; x++) {
-    for (let z = 0; z < ROOM_HEIGHT; z++) {
-      const isLight = (x + z) % 2 === 0;
-      tiles.push({
-        x: x - ROOM_WIDTH / 2 + 0.5,
-        z: z - ROOM_HEIGHT / 2 + 0.5,
-        color: isLight ? "#c8b89a" : "#b8a88a",
-      });
-    }
-  }
-  return tiles;
-});
-
-// Wall segments: top, bottom, left, right
-const walls = [
-  // top wall
-  { x: 0, z: -ROOM_HEIGHT / 2 - 0.25, sx: ROOM_WIDTH, sy: 0.75, sz: 0.5, color: "#8b7355" },
-  // bottom wall
-  { x: 0, z: ROOM_HEIGHT / 2 + 0.25, sx: ROOM_WIDTH, sy: 0.75, sz: 0.5, color: "#8b7355" },
-  // left wall
-  { x: -ROOM_WIDTH / 2 - 0.25, z: 0, sx: 0.5, sy: 0.75, sz: ROOM_HEIGHT + 1, color: "#7a6548" },
-  // right wall
-  { x: ROOM_WIDTH / 2 + 0.25, z: 0, sx: 0.5, sy: 0.75, sz: ROOM_HEIGHT + 1, color: "#7a6548" },
-];
-
-// Furniture: bed, table, bookshelf, rug
-const furniture = [
-  // Bed (top-right corner)
-  { x: 3.5, z: -2.8, sx: 1.8, sy: 0.3, sz: 2.4, color: "#3a7bd5", label: "bed-frame" },
-  { x: 3.5, z: -2.8, sx: 1.6, sy: 0.4, sz: 2.2, yOff: 0.3, color: "#e8c4a0", label: "mattress" },
-  { x: 3.5, z: -3.8, sx: 1.6, sy: 0.45, sz: 0.4, yOff: 0.5, color: "#fff8f0", label: "pillow" },
-  // Table (left side)
-  { x: -3.5, z: 1.5, sx: 1.2, sy: 0.1, sz: 0.8, yOff: 0.5, color: "#a07850" },
-  { x: -3.5, z: 1.5, sx: 0.08, sy: 0.5, sz: 0.08, yOff: 0.0, color: "#7a5830", label: "leg1" },
-  // Bookshelf (top-left corner)
-  { x: -3.8, z: -2.5, sx: 0.4, sy: 1.0, sz: 2.0, color: "#6b4c2a" },
-  { x: -3.8, z: -2.5, sx: 0.05, sy: 0.9, sz: 1.8, yOff: 0.05, color: "#e8d0c0", label: "books" },
-  // Rug (center)
-  { x: 0, z: 0.5, sx: 3.5, sy: 0.02, sz: 2.5, yOff: 0.01, color: "#c94a6e", label: "rug" },
-  // Small window / painting on top wall
-  { x: 1.5, z: -3.6, sx: 1.2, sy: 0.8, sz: 0.1, yOff: 0.5, color: "#87ceeb", label: "window" },
-  {
-    x: 1.5,
-    z: -3.6,
-    sx: 1.4,
-    sy: 1.0,
-    sz: 0.12,
-    yOff: 0.5,
-    color: "#5a4025",
-    label: "window-frame",
-  },
-];
-
 // Camera: fixed offset that follows the player
 const CAMERA_OFFSET = { x: 0, y: 8, z: 5 };
 const cameraPosition = computed<[number, number, number]>(() => [
@@ -327,131 +271,53 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
         :far="CAMERA_FAR"
       />
 
-      <!-- Ambient light -->
-      <TresAmbientLight :intensity="0.6" color="#fff8e8" />
-
-      <!-- Main directional light (ceiling lamp) -->
-      <TresDirectionalLight
-        :position="[2, 6, 3]"
-        :intensity="1.2"
-        color="#fff8e8"
-        :cast-shadow="true"
-      />
-
-      <!-- Warm accent light -->
-      <TresPointLight :position="[-2, 3, 2]" color="#ffd4a0" :intensity="0.8" :distance="8" />
-
-      <!-- ── Floor tiles ── -->
-      <TresMesh
-        v-for="(tile, i) in floorTiles"
-        :key="`tile-${i}`"
-        :position="[tile.x, 0, tile.z]"
-        :receive-shadow="true"
-      >
-        <TresBoxGeometry :args="[1, 0.05, 1]" />
-        <TresMeshLambertMaterial :color="tile.color" />
-      </TresMesh>
-
-      <!-- ── Walls ── -->
-      <TresMesh
-        v-for="(wall, i) in walls"
-        :key="`wall-${i}`"
-        :position="[wall.x, wall.sy / 2, wall.z]"
-        :cast-shadow="true"
-        :receive-shadow="true"
-      >
-        <TresBoxGeometry :args="[wall.sx, wall.sy, wall.sz]" />
-        <TresMeshLambertMaterial :color="wall.color" />
-      </TresMesh>
-
-      <!-- ── Furniture ── -->
-      <TresMesh
-        v-for="(item, i) in furniture"
-        :key="`furniture-${i}`"
-        :position="[item.x, (item.yOff ?? 0) + (item.sy ?? 0.1) / 2, item.z]"
-        :cast-shadow="true"
-        :receive-shadow="true"
-      >
-        <TresBoxGeometry :args="[item.sx, item.sy, item.sz]" />
-        <TresMeshLambertMaterial :color="item.color" />
-      </TresMesh>
-
       <!-- ── Player character ── -->
-      <!-- Body -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.3, gameState.player.position.z]"
-        :cast-shadow="true"
-      >
-        <TresBoxGeometry :args="[0.4, 0.5, 0.3]" />
-        <TresMeshLambertMaterial color="#4a90d9" />
-      </TresMesh>
-      <!-- Head -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.72, gameState.player.position.z]"
-        :cast-shadow="true"
-      >
-        <TresBoxGeometry :args="[0.32, 0.32, 0.32]" />
-        <TresMeshLambertMaterial color="#f5cba0" />
-      </TresMesh>
-      <!-- Cap -->
-      <TresMesh
-        :position="[gameState.player.position.x, 0.92, gameState.player.position.z - 0.02]"
-        :cast-shadow="true"
-      >
-        <TresBoxGeometry :args="[0.36, 0.14, 0.36]" />
-        <TresMeshLambertMaterial color="#e53935" />
-      </TresMesh>
+      <GamePlayer :position="[gameState.player.position.x, 0, gameState.player.position.z]" />
 
       <!-- ── Tap-to-move destination marker ── -->
-      <TresMesh
-        v-if="tapDestination"
-        :position="[tapDestination.x, DESTINATION_MARKER_HEIGHT, tapDestination.z]"
-      >
-        <TresCylinderGeometry :args="[0.22, 0.22, 0.04, 16]" />
-        <TresMeshLambertMaterial
-          color="#ffd700"
-          :emissive="'#ffd700'"
-          :emissive-intensity="0.6"
-          :transparent="true"
-          :opacity="0.75"
-        />
-      </TresMesh>
+      <GameDestinationMarker
+        v-if="tapDestination !== null"
+        :position="[tapDestination.x, 0, tapDestination.z]"
+      />
 
-      <!-- ── Radio ── -->
-      <GameRadio
-        :position="[RADIO_POSITION.x, 0, RADIO_POSITION.z]"
-        :state="radioEnabled === true ? 'on' : 'off'"
-      >
-        <InteractionIndicator
-          v-if="nearRadio === true && dialogOpen !== true"
-          :position="[0, 1.35, 0]"
-        />
-      </GameRadio>
+      <!-- ── Room: floor, walls, furniture, and interactable objects ── -->
+      <RoomPlayerBedroom>
+        <!-- Radio -->
+        <GameRadio
+          :position="[RADIO_POSITION.x, 0, RADIO_POSITION.z]"
+          :state="radioEnabled === true ? 'on' : 'off'"
+        >
+          <InteractionIndicator
+            v-if="nearRadio === true && dialogOpen !== true"
+            :position="[0, 1.35, 0]"
+          />
+        </GameRadio>
 
-      <!-- ── TV ── -->
-      <GameTV
-        :position="[TV_POSITION.x, 0, TV_POSITION.z]"
-        :rotation="[0, -Math.PI / 2, 0]"
-        :is-on="tvOn"
-        :dialog-open="dialogOpen"
-      >
-        <InteractionIndicator
-          v-if="nearTV === true && dialogOpen !== true"
-          :position="[0, 1.87, 0]"
-        />
-      </GameTV>
+        <!-- TV -->
+        <GameTV
+          :position="[TV_POSITION.x, 0, TV_POSITION.z]"
+          :rotation="[0, -Math.PI / 2, 0]"
+          :is-on="tvOn"
+          :dialog-open="dialogOpen"
+        >
+          <InteractionIndicator
+            v-if="nearTV === true && dialogOpen !== true"
+            :position="[0, 1.87, 0]"
+          />
+        </GameTV>
 
-      <!-- ── Mom NPC ── -->
-      <GameMomNpc
-        v-for="npc in gameState.npcs"
-        :key="npc.id"
-        :position="[npc.position.x, 0, npc.position.z]"
-      >
-        <InteractionIndicator
-          v-if="gameState.nearbyNPC?.id === npc.id && dialogOpen !== true"
-          :position="[0, 1.4, 0]"
-        />
-      </GameMomNpc>
+        <!-- Mom NPC -->
+        <GameMomNpc
+          v-for="npc in gameState.npcs"
+          :key="npc.id"
+          :position="[npc.position.x, 0, npc.position.z]"
+        >
+          <InteractionIndicator
+            v-if="gameState.nearbyNPC?.id === npc.id && dialogOpen !== true"
+            :position="[0, 1.4, 0]"
+          />
+        </GameMomNpc>
+      </RoomPlayerBedroom>
     </TresCanvas>
 
     <!-- ── HUD overlay ── -->
