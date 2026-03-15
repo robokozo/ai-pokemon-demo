@@ -1,6 +1,12 @@
 ﻿import { ref, computed } from "vue"
 import { useSpeechRecognition, useSpeechSynthesis } from "@vueuse/core"
 
+// Cancel any in-flight speech if the user refreshes or navigates away.
+// Registered once at module level — browser lifecycle, not Vue lifecycle.
+window.addEventListener("beforeunload", () => {
+  window.speechSynthesis.cancel()
+})
+
 export function useVoice() {
   const isListening = ref(false)
   const isSpeaking = ref(false)

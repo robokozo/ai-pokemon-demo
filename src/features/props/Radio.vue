@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { shallowReactive, onMounted, onUnmounted } from "vue"
-import { useSceneStore } from "../useSceneStore"
+import { useEntity } from "../useEntity"
 
 interface Props {
-  initialPosition?: [number, number, number]
+  position?: [number, number, number]
   rotation?: [number, number, number]
   state?: "on" | "off"
 }
 
-const { initialPosition = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
 
-const store = useSceneStore()
-const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
-const entity = { id: "radio", name: "Radio", kind: "prop" as const, collider: "none" as const, interactive: true as const, position }
-
-onMounted(() => {
-  store.register(entity)
-})
-onUnmounted(() => {
-  store.unregister({ id: "radio" })
+useEntity({
+  id: "radio",
+  name: "Radio",
+  kind: "prop",
+  collider: "solid",
+  colliderSize: { hw: 0.45, hd: 0.28 },
+  interactive: true,
+  isStatic: true,
+  position,
 })
 </script>
 
 <template>
-  <TresGroup :position="[position.x, position.y, position.z]" :rotation="rotation">
+  <TresGroup :position="position" :rotation="rotation">
     <!-- Table surface -->
     <TresMesh :position="[0, 0.55, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[0.9, 0.06, 0.55]" />

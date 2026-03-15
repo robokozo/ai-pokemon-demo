@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { ref } from "vue"
+import { markRaw, ref } from "vue"
 
 export type EntityKind = "player" | "npc" | "prop"
 export type ColliderType = "solid" | "none"
@@ -19,6 +19,8 @@ export interface SceneEntity {
   colliderSize?: { hw: number; hd: number }
   /** Only entities with interactive: true set nearbyEntity and show HUD actions. */
   interactive?: true
+  /** Marks entities that never move. register() calls markRaw() on them to skip Vue's deep proxy. */
+  isStatic?: true
   position: EntityPosition
 }
 
@@ -35,6 +37,9 @@ export const useSceneStore = defineStore("scene", () => {
   }
 
   function register(entity: SceneEntity) {
+    if (entity.isStatic === true) {
+      markRaw(entity)
+    }
     entities.value.push(entity)
   }
 
@@ -59,6 +64,32 @@ export const useSceneStore = defineStore("scene", () => {
 
   function getInteractables(): Array<SceneEntity> {
     return entities.value.filter((e) => e.kind !== "player")
+  }
+
+  // Nudge a tap destination that lands inside a solid collider to the nearest
+  // point just outside it. Returns the adjusted position.
+  function clampTapDestination({ x, z }: { x: number; z: number }): { x: number; z: number } {
+    const PLAYER_HALF = 0.3
+    let cx = x
+    let cz = z
+    for (const entity of entities.value.filter((e) => e.collider === "solid")) {
+      if (entity.colliderSize !== undefined) {
+        const { hw, hd } = entity.colliderSize
+        const ox = cx - entity.position.x
+        const oz = cz - entity.position.z
+        const overlapX = PLAYER_HALF + hw - Math.abs(ox)
+        const overlapZ = PLAYER_HALF + hd - Math.abs(oz)
+        if (overlapX > 0 && overlapZ > 0) {
+          // Push out along the axis of least penetration
+          if (overlapX < overlapZ) {
+            cx += overlapX * Math.sign(ox)
+          } else {
+            cz += overlapZ * Math.sign(oz)
+          }
+        }
+      }
+    }
+    return { x: cx, z: cz }
   }
 
   function updateNearbyEntity() {
@@ -92,6 +123,7 @@ export const useSceneStore = defineStore("scene", () => {
     clearTapDestination,
     getPlayer,
     getInteractables,
+    clampTapDestination,
     updateNearbyEntity,
   }
 })

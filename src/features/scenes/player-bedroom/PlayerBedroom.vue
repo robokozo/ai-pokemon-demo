@@ -42,15 +42,15 @@ for (let x = 0; x < ROOM_WIDTH; x++) {
     </TresMesh>
 
     <!-- Walls -->
-    <Wall id="wall-top" :initial-position="[0, 0, -4.25]" :width="10" :depth="0.5" color="#8b7355" />
-    <Wall id="wall-bottom" :initial-position="[0, 0, 4.25]" :width="10" :depth="0.5" color="#8b7355" />
-    <Wall id="wall-left" :initial-position="[-5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
-    <Wall id="wall-right" :initial-position="[5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
+    <Wall id="wall-top" :position="[0, 0, -4.25]" :width="10" :depth="0.5" color="#8b7355" />
+    <Wall id="wall-bottom" :position="[0, 0, 4.25]" :width="10" :depth="0.5" color="#8b7355" />
+    <Wall id="wall-left" :position="[-5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
+    <Wall id="wall-right" :position="[5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
 
     <!-- Furniture -->
-    <Bed :initial-position="[3.5, 0, -2.8]" />
-    <Bookshelf :initial-position="[-3.8, 0, -2.5]" />
-    <Table :initial-position="[-3.5, 0, 1.5]" />
+    <Bed :position="[3.5, 0, -2.8]" />
+    <Bookshelf :position="[-3.8, 0, -2.5]" />
+    <Table :position="[-3.5, 0, 1.5]" />
     <Rug :position="[0, 0, 0.5]" />
     <Window :position="[1.5, 0, -3.6]" />
 

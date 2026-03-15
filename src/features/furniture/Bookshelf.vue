@@ -1,36 +1,17 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue"
-import { useSceneStore } from "../useSceneStore"
+import { useEntity } from "../useEntity"
 
 interface Props {
-  initialPosition?: [number, number, number]
+  position?: [number, number, number]
 }
 
-const { initialPosition = [0, 0, 0] } = defineProps<Props>()
+const { position = [0, 0, 0] } = defineProps<Props>()
 
-const store = useSceneStore()
-const position = { x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] }
-
-const entity = {
-  id: "bookshelf",
-  name: "Bookshelf",
-  kind: "prop" as const,
-  collider: "solid" as const,
-  // Shelf geometry: 0.4 wide × 2.0 deep → half-extents 0.2, 1.0
-  colliderSize: { hw: 0.2, hd: 1.0 },
-  position,
-}
-
-onMounted(() => {
-  store.register(entity)
-})
-onUnmounted(() => {
-  store.unregister({ id: "bookshelf" })
-})
+useEntity({ id: "bookshelf", name: "Bookshelf", kind: "prop", collider: "solid", colliderSize: { hw: 0.2, hd: 1.0 }, isStatic: true, position })
 </script>
 
 <template>
-  <TresGroup :position="initialPosition">
+  <TresGroup :position="position">
     <!-- Shelf unit -->
     <TresMesh :position="[0, 0.5, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[0.4, 1.0, 2.0]" />

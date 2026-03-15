@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from "vue"
 import { TresCanvas } from "@tresjs/core"
+import { EffectComposerPmndrs, BloomPmndrs } from "@tresjs/post-processing"
 import * as THREE from "three"
 import { useSceneStore } from "./useSceneStore"
 import type { SceneEntity } from "./useSceneStore"
@@ -194,7 +195,8 @@ function handlePointerDown(event: PointerEvent) {
   const hit = raycaster.ray.intersectPlane(floorPlane, worldPoint)
 
   if (hit !== null) {
-    store.setTapDestination(worldPoint)
+    const clamped = store.clampTapDestination({ x: worldPoint.x, z: worldPoint.z })
+    store.setTapDestination({ x: clamped.x, y: 0, z: clamped.z })
   }
 }
 
@@ -244,6 +246,12 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <!-- Camera follows player with fixed offset -->
       <TresPerspectiveCamera :position="cameraPosition" :look-at="cameraLookAt" :fov="CAMERA_FOV" :near="CAMERA_NEAR" :far="CAMERA_FAR" />
 
+      <!-- ── Post-processing ── -->
+      <EffectComposerPmndrs>
+        <!-- luminanceThreshold and mipmapBlur focus bloom on bright emissive surfaces (TV screen) -->
+        <BloomPmndrs :intensity="1.8" :luminance-threshold="0.6" :luminance-smoothing="0.1" :mipmap-blur="true" />
+      </EffectComposerPmndrs>
+
       <!-- ── Player character ── -->
       <Player />
 
@@ -253,17 +261,17 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
       <!-- ── Room: floor, walls, furniture, and interactable objects ── -->
       <PlayerBedroom>
         <!-- Radio -->
-        <Radio :initial-position="[-3.5, 0, 0.5]" :state="radioEnabled === true ? 'on' : 'off'">
+        <Radio :position="[-3.5, 0, 0.5]" :state="radioEnabled === true ? 'on' : 'off'">
           <InteractionIndicator v-if="store.nearbyEntity?.id === 'radio' && dialogOpen !== true" :position="[0, 1.35, 0]" />
         </Radio>
 
         <!-- TV -->
-        <TV :initial-position="[4.86, 0, 0]" :rotation="[0, -Math.PI / 2, 0]" :is-on="tvOn" :dialog-open="dialogOpen">
+        <TV :position="[4.86, 0, 0]" :rotation="[0, -Math.PI / 2, 0]" :is-on="tvOn" :dialog-open="dialogOpen">
           <InteractionIndicator v-if="store.nearbyEntity?.id === 'tv' && dialogOpen !== true" :position="[0, 1.87, 0]" />
         </TV>
 
         <!-- Mom NPC -->
-        <MomNpc>
+        <MomNpc is-static>
           <InteractionIndicator v-if="store.nearbyEntity?.id === 'mom' && dialogOpen !== true" :position="[0, 1.4, 0]" />
         </MomNpc>
       </PlayerBedroom>

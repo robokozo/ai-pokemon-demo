@@ -1,55 +1,34 @@
 <script setup lang="ts">
-import { ref, computed, watch, shallowReactive, onMounted, onUnmounted } from "vue"
-import { useLoop } from "@tresjs/core"
+import { ref, watch } from "vue"
 import { useTimeoutFn } from "@vueuse/core"
 import { useTVNews } from "./useTVNews"
-import { useSceneStore } from "../useSceneStore"
+import { useEntity } from "../useEntity"
 
 interface Props {
-  initialPosition?: [number, number, number]
+  position?: [number, number, number]
   rotation?: [number, number, number]
   isOn?: boolean
   dialogOpen?: boolean
 }
 
-const { initialPosition = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
+const { position = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
 
-const store = useSceneStore()
-const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
-const entity = { id: "tv", name: "TV", kind: "prop" as const, collider: "none" as const, interactive: true as const, position }
-
-onMounted(() => {
-  store.register(entity)
-})
-onUnmounted(() => {
-  store.unregister({ id: "tv" })
+useEntity({
+  id: "tv",
+  name: "TV",
+  kind: "prop",
+  collider: "solid",
+  colliderSize: { hw: 0.35, hd: 0.75 },
+  interactive: true,
+  isStatic: true,
+  position,
 })
 
 const TV_INITIAL_DELAY_MS = 800
 
-// Animated screen brightness — very subtle pulse between 0.85 and 1.1
-const screenPulse = ref(0)
 // Inset story box + ticker: appear when a new story starts, hide after it ends
 const showInset = ref(false)
 const showTicker = ref(false)
-
-const { onBeforeRender } = useLoop()
-onBeforeRender(({ elapsed }) => {
-  if (isOn === true) {
-    screenPulse.value = (Math.sin(elapsed * 1.26) + 1) / 2
-  }
-})
-
-// Emissive intensity: 0.9 → 1.0
-const screenBrightness = computed(() => 0.9 + screenPulse.value * 0.1)
-// Emissive color: dim blue-grey → mid bright blue
-const screenEmissive = computed(() => {
-  const t = screenPulse.value
-  const r = Math.round(0x1a + t * (0x4a - 0x1a))
-  const g = Math.round(0x4a + t * (0xa0 - 0x4a))
-  const b = Math.round(0x6a + t * (0xe0 - 0x6a))
-  return `rgb(${r},${g},${b})`
-})
 const TV_RESUME_DELAY_MS = 4000
 
 const tvNews = useTVNews()
@@ -103,7 +82,7 @@ watch(
 </script>
 
 <template>
-  <TresGroup :position="[position.x, position.y, position.z]" :rotation="rotation">
+  <TresGroup :position="position" :rotation="rotation">
     <!-- Stand / cabinet -->
     <TresMesh :position="[0, 0.25, 0]" :cast-shadow="true" :receive-shadow="true">
       <TresBoxGeometry :args="[1.2, 0.5, 0.45]" />
@@ -114,13 +93,13 @@ watch(
       <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />
       <TresMeshLambertMaterial color="#1a1a1a" />
     </TresMesh>
-    <!-- Screen — glows when on -->
+    <!-- Screen — emissive when on; bloom post-processing creates the glow -->
     <TresMesh :position="[0, 1.0, 0.145]">
       <TresBoxGeometry :args="[1.15, 0.65, 0.01]" />
-      <TresMeshLambertMaterial
+      <TresMeshStandardMaterial
         :color="isOn === true ? '#a8d8ff' : '#111111'"
-        :emissive="isOn === true ? screenEmissive : '#000000'"
-        :emissive-intensity="isOn === true ? screenBrightness : 0"
+        :emissive="isOn === true ? '#a8d8ff' : '#000000'"
+        :emissive-intensity="isOn === true ? 2.2 : 0"
       />
     </TresMesh>
     <!-- Power indicator light -->

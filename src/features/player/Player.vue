@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { shallowReactive, onMounted, onUnmounted } from "vue"
+import { onMounted, onUnmounted } from "vue"
 import { useLoop } from "@tresjs/core"
-import { useSceneStore } from "../useSceneStore"
+import { useEntity } from "../useEntity"
 import { useControls } from "../useControls"
 import { usePlayerMovement } from "../usePlayerMovement"
 
@@ -12,11 +12,7 @@ interface Props {
 
 const { initialPosition = [0, 0, 1], controlsOverride } = defineProps<Props>()
 
-const store = useSceneStore()
-
-const position = shallowReactive({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
-
-const entity = { id: "player", name: "Player", kind: "player" as const, collider: "solid" as const, position }
+const { position } = useEntity({ id: "player", name: "Player", kind: "player", collider: "solid", position: initialPosition })
 
 const controls = controlsOverride !== undefined ? controlsOverride : useControls()
 const movement = usePlayerMovement({ controls, position })
@@ -29,14 +25,12 @@ function onKeyUp(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  store.register(entity)
   if (controlsOverride === undefined) {
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
   }
 })
 onUnmounted(() => {
-  store.unregister({ id: "player" })
   if (controlsOverride === undefined) {
     window.removeEventListener("keydown", onKeyDown)
     window.removeEventListener("keyup", onKeyUp)

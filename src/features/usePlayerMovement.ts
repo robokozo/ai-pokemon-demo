@@ -92,6 +92,16 @@ export function usePlayerMovement({ controls, position }: { controls: ReturnType
     // rather than getting fully stuck when only one axis is blocked.
     const resolvedX = isOverlapping(pos.x + dx, pos.z) !== true ? pos.x + dx : pos.x
     const resolvedZ = isOverlapping(resolvedX, pos.z + dz) !== true ? pos.z + dz : pos.z
+
+    // If tap-to-move is active and both axes were completely blocked this frame,
+    // cancel immediately rather than waiting for the stuck timer.
+    const isMovingIntent = dx !== 0 || dz !== 0
+    const isFullyBlocked = resolvedX === pos.x && resolvedZ === pos.z
+    if (isMovingIntent === true && isFullyBlocked === true && store.tapDestination !== null) {
+      store.clearTapDestination()
+      lastDistToDestination = Infinity
+    }
+
     pos.x = resolvedX
     pos.z = resolvedZ
 
