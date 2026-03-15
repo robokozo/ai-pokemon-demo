@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEntity } from "../useEntity"
-import { useSceneStore } from "../useSceneStore"
+import { useDialogStore } from "../dialog/useDialogStore"
 
 interface Props {
   id?: string
@@ -13,9 +13,9 @@ interface Props {
 
 const { id, name = "NPC", position = [-1.5, 0, -1.5], isStatic, description = "", castShadow = false } = defineProps<Props>()
 
-const store = useSceneStore()
+const dialog = useDialogStore()
 
-const { position: entityPosition } = useEntity({
+const entity = useEntity({
   id,
   name,
   kind: "npc",
@@ -23,9 +23,11 @@ const { position: entityPosition } = useEntity({
   interactive: true,
   isStatic,
   position,
-  onInteract: () => store.openDialog({ description }),
+  onInteract: () => dialog.openDialog({ entity, description }),
   actionLabel: () => `Talk to ${name}`,
 })
+
+const { position: entityPosition } = entity
 </script>
 
 <template>

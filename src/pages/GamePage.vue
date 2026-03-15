@@ -1,26 +1,31 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { useEventListener } from "@vueuse/core"
-import { useSceneStore } from "../features/useSceneStore"
+import { useGameState } from "../features/game/useGameState"
+import { useDialogStore } from "../features/dialog/useDialogStore"
+import SceneTransition from "../features/transitions/SceneTransition.vue"
 import PlayerBedroom from "../features/scenes/player-house/PlayerBedroom.vue"
 import FirstFloor from "../features/scenes/player-house/FirstFloor.vue"
 import DialogBox from "../features/ui/DialogBox.vue"
 
-const store = useSceneStore()
+const gameState = useGameState()
+const dialog = useDialogStore()
 
 const isControlsOpen = ref(false)
 
 useEventListener(window, "keydown", (e: KeyboardEvent) => {
-  if (e.key === "Escape" && store.dialogEntity !== null) {
-    store.closeDialog()
+  if (e.key === "Escape" && dialog.dialogEntity !== null) {
+    dialog.closeDialog()
   }
 })
 </script>
 
 <template>
   <div class="game-container">
-    <PlayerBedroom v-if="store.currentScene === 'bedroom'" />
-    <FirstFloor v-else-if="store.currentScene === 'first-floor'" />
+    <SceneTransition v-slot="{ visibleScene }">
+      <PlayerBedroom v-if="visibleScene === 'bedroom'" />
+      <FirstFloor v-else-if="visibleScene === 'first-floor'" />
+    </SceneTransition>
 
     <!-- ── HUD overlay ── -->
     <div class="hud">
@@ -43,14 +48,18 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
       </div>
 
       <!-- Actions — shown when near an interactable and no dialog is open -->
-      <div v-if="store.dialogEntity === null && store.nearbyEntity !== null" class="hud-panel">
+      <div v-if="dialog.dialogEntity === null && gameState.nearbyEntity !== null" class="hud-panel">
         <div class="hud-panel-header">
           <span class="panel-title">Actions</span>
         </div>
         <div class="hud-panel-body">
-          <button class="hud-action" :aria-label="store.nearbyEntity.actionLabel?.()" @pointerdown.stop.prevent="store.nearbyEntity?.onInteract?.()">
-            <span>{{ store.nearbyEntity.kind === "npc" ? "💬" : "⚡" }}</span>
-            <span>{{ store.nearbyEntity.actionLabel?.() }}</span>
+          <button
+            class="hud-action"
+            :aria-label="gameState.nearbyEntity.actionLabel?.()"
+            @pointerdown.stop.prevent="gameState.nearbyEntity?.onInteract?.()"
+          >
+            <span>{{ gameState.nearbyEntity.kind === "npc" ? "💬" : "⚡" }}</span>
+            <span>{{ gameState.nearbyEntity.actionLabel?.() }}</span>
           </button>
         </div>
       </div>
@@ -58,11 +67,11 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
 
     <!-- ── Dialog Box ── -->
     <DialogBox
-      v-if="store.dialogEntity?.kind === 'npc'"
-      :npc-name="store.dialogEntity.name"
-      :npc-description="store.dialogDescription ?? ''"
+      v-if="dialog.dialogEntity?.kind === 'npc'"
+      :npc-name="dialog.dialogEntity.name"
+      :npc-description="dialog.dialogDescription ?? ''"
       :visible="true"
-      @close="store.closeDialog()"
+      @close="dialog.closeDialog()"
     />
   </div>
 </template>

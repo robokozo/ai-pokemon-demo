@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useEntity } from "../useEntity"
-import { useSceneStore } from "../useSceneStore"
-import type { SceneName } from "../useSceneStore"
+import { useSceneNavigation } from "../scenes/useSceneNavigation"
+import type { SceneName } from "../scenes/useSceneNavigation"
 
 interface Props {
   id?: string
@@ -25,7 +25,7 @@ const {
   actionLabel = "Go downstairs",
 } = defineProps<Props>()
 
-const store = useSceneStore()
+const sceneNav = useSceneNavigation()
 
 useEntity({
   id,
@@ -36,7 +36,7 @@ useEntity({
   interactive: true,
   isStatic: true,
   position,
-  onInteract: () => store.setScene({ scene: targetScene, entrypoint: targetEntrypoint }),
+  onInteract: () => sceneNav.setScene({ scene: targetScene, entrypoint: targetEntrypoint }),
   actionLabel: () => actionLabel,
 })
 </script>

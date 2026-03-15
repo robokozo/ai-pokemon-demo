@@ -1,6 +1,8 @@
 import { shallowReactive, onMounted, onUnmounted } from "vue"
-import { type ColliderType, type EntityKind, type EntityPosition, type SceneEntity, useSceneStore } from "./useSceneStore"
+import type { ColliderType, EntityKind, EntityPosition, SceneEntity } from "./entities/entity"
+import { useEntityStore } from "./entities/useEntityStore"
 
+// Intentionally monotonic across the app lifecycle to guarantee unique IDs across scene transitions.
 let entityCount = 0
 
 interface EntityConfig {
@@ -30,7 +32,7 @@ export function useEntity({
 }: EntityConfig): SceneEntity {
   const id = idProp ?? `entity-${++entityCount}`
   const name = nameProp ?? id ?? `Entity ${entityCount}`
-  const store = useSceneStore()
+  const entityStore = useEntityStore()
 
   const entityPosition: EntityPosition =
     isStatic === true ? { x: position[0], y: position[1], z: position[2] } : shallowReactive({ x: position[0], y: position[1], z: position[2] })
@@ -49,11 +51,11 @@ export function useEntity({
   }
 
   onMounted(() => {
-    store.register(entity)
+    entityStore.register(entity)
   })
 
   onUnmounted(() => {
-    store.unregister({ id })
+    entityStore.unregister({ id })
   })
 
   return entity
