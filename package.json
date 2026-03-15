@@ -31,6 +31,7 @@
     "@vue/tsconfig": "^0.9.0",
     "typescript": "~5.9.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vite-plugin-vue-devtools": "^8.1.0",
     "vite-plus": "latest",
     "vue-tsc": "^3.2.5"
   },

@@ -13,7 +13,7 @@ export interface Tile {
 export interface SceneConfig {
   roomWidth: number
   roomHeight: number
-  floorColors: { light: string; dark: string }
+  floorColors: { light: string; dark: string } | { solid: string }
   camera: SceneCamera
   entryPoints: Record<string, [number, number, number]>
 }
@@ -24,15 +24,19 @@ export function useSceneSetup({ roomWidth, roomHeight, floorColors, camera, entr
   const gameState = useGameState()
 
   // ── Floor tiles ──────────────────────────────────────────────────────────────
+  const isSolidFloor = "solid" in floorColors
   const floorTiles: Array<Tile> = []
-  for (let x = 0; x < roomWidth; x++) {
-    for (let z = 0; z < roomHeight; z++) {
-      const isLight = (x + z) % 2 === 0
-      floorTiles.push({
-        x: x - roomWidth / 2 + 0.5,
-        z: z - roomHeight / 2 + 0.5,
-        color: isLight === true ? floorColors.light : floorColors.dark,
-      })
+  if (isSolidFloor !== true) {
+    const { light, dark } = floorColors as { light: string; dark: string }
+    for (let x = 0; x < roomWidth; x++) {
+      for (let z = 0; z < roomHeight; z++) {
+        const isLight = (x + z) % 2 === 0
+        floorTiles.push({
+          x: x - roomWidth / 2 + 0.5,
+          z: z - roomHeight / 2 + 0.5,
+          color: isLight === true ? light : dark,
+        })
+      }
     }
   }
 
@@ -56,8 +60,13 @@ export function useSceneSetup({ roomWidth, roomHeight, floorColors, camera, entr
   // ── Spawn ────────────────────────────────────────────────────────────────────
   const spawnPosition = computed<[number, number, number]>(() => entryPoints[sceneNav.activeEntrypoint] ?? entryPoints["default"])
 
+  const solidFloorColor = isSolidFloor === true ? (floorColors as { solid: string }).solid : null
+
   return {
     floorTiles,
+    solidFloorColor,
+    roomWidth,
+    roomHeight,
     cameraPosition,
     cameraLookAt,
     spawnPosition,

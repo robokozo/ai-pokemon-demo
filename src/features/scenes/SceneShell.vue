@@ -16,7 +16,7 @@ interface Props {
 
 const { config, clearColor = "#1a1a2e", ambientIntensity = 1.5, directionalIntensity = 0.4, directionalPosition = [2, 6, 3] } = defineProps<Props>()
 
-const { floorTiles, cameraPosition, cameraLookAt, spawnPosition, gameState } = useSceneSetup(config)
+const { floorTiles, solidFloorColor, roomWidth, roomHeight, cameraPosition, cameraLookAt, spawnPosition, gameState } = useSceneSetup(config)
 </script>
 
 <template>
@@ -41,7 +41,14 @@ const { floorTiles, cameraPosition, cameraLookAt, spawnPosition, gameState } = u
         <TresAmbientLight :intensity="ambientIntensity" />
         <TresDirectionalLight :position="directionalPosition" :intensity="directionalIntensity" />
 
-        <TresMesh v-for="(tile, i) in floorTiles" :key="`tile-${i}`" :position="[tile.x, 0, tile.z]">
+        <!-- Solid ground plane (outdoor) -->
+        <TresMesh v-if="solidFloorColor !== null" :position="[0, -0.025, 0]">
+          <TresBoxGeometry :args="[roomWidth, 0.05, roomHeight]" />
+          <TresMeshLambertMaterial :color="solidFloorColor" />
+        </TresMesh>
+
+        <!-- Checkerboard tiles (indoor) -->
+        <TresMesh v-for="(tile, i) in floorTiles" v-else :key="`tile-${i}`" :position="[tile.x, 0, tile.z]">
           <TresBoxGeometry :args="[1, 0.05, 1]" />
           <TresMeshLambertMaterial :color="tile.color" />
         </TresMesh>

@@ -1,5 +1,6 @@
 import { defineConfig } from "vite-plus"
 import vue from "@vitejs/plugin-vue"
+import vueDevTools from "vite-plugin-vue-devtools"
 import templateCompilerOptions from "@tresjs/core/template-compiler-options"
 
 // https://vite.dev/config/
@@ -12,9 +13,9 @@ export default defineConfig({
     ignorePatterns: [],
     semi: false,
     objectWrap: "preserve",
-    trailingComma: "all",
+    trailingCommas: "all",
     printWidth: 150,
   },
   base: "/ai-pokemon-demo/",
-  plugins: [vue(templateCompilerOptions)],
+  plugins: [vue(templateCompilerOptions), vueDevTools()],
 })

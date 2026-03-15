@@ -3,7 +3,7 @@ import { ref } from "vue"
 import { useGameState } from "../game/useGameState"
 import { useDialogStore } from "../dialog/useDialogStore"
 
-export type SceneName = "bedroom" | "first-floor"
+export type SceneName = "bedroom" | "first-floor" | "home-exterior"
 export type Entrypoint = string
 
 export interface SceneCamera {

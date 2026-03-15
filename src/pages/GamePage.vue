@@ -6,6 +6,7 @@ import { useDialogStore } from "../features/dialog/useDialogStore"
 import SceneTransition from "../features/transitions/SceneTransition.vue"
 import PlayerBedroom from "../features/scenes/player-house/PlayerBedroom.vue"
 import FirstFloor from "../features/scenes/player-house/FirstFloor.vue"
+import HomeExterior from "../features/scenes/home-exterior/HomeExterior.vue"
 import DialogBox from "../features/ui/DialogBox.vue"
 
 const gameState = useGameState()
@@ -25,6 +26,7 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
     <SceneTransition v-slot="{ visibleScene }">
       <PlayerBedroom v-if="visibleScene === 'bedroom'" />
       <FirstFloor v-else-if="visibleScene === 'first-floor'" />
+      <HomeExterior v-else-if="visibleScene === 'home-exterior'" />
     </SceneTransition>
 
     <!-- ── HUD overlay ── -->

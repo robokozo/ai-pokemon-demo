@@ -11,6 +11,7 @@ import KitchenCounter from "../../furniture/KitchenCounter.vue"
 import TV from "../../props/tv/TV.vue"
 import FlowerVase from "../../props/FlowerVase.vue"
 import Staircase from "../../transitions/Staircase.vue"
+import Doorway from "../../transitions/Doorway.vue"
 import MomNpc from "../../npcs/MomNpc.vue"
 import InteractionIndicator from "../../ui/InteractionIndicator.vue"
 
@@ -22,6 +23,7 @@ const sceneConfig: SceneConfig = {
   entryPoints: {
     default: [0, 0, 4.0],
     "from-bedroom": [0, 0, -5.5],
+    "from-outside": [0, 0, 5.0],
   },
 }
 
@@ -42,9 +44,9 @@ CURRENT OBJECTIVE: Encourage the player to sit down at the dining table and eat.
     <Wall id="wall-north-r" :position="[3.93, 0, -6.25]" :width="6.14" :depth="0.5" color="#7a6548" />
     <Wall id="wall-left" :position="[-7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
     <Wall id="wall-right" :position="[7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
-    <!-- South wall split — gap in the centre implies the front door -->
-    <Wall id="wall-south-w" :position="[-3.5, 0, 6.25]" :width="7" :depth="0.5" color="#7a6548" />
-    <Wall id="wall-south-e" :position="[3.5, 0, 6.25]" :width="7" :depth="0.5" color="#7a6548" />
+    <!-- South wall split — gap matches doorway frame width (~1.5 units) -->
+    <Wall id="wall-south-w" :position="[-3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
+    <Wall id="wall-south-e" :position="[3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
 
     <!-- ── Living room (west) ─────────────────────────────────────── -->
     <Sofa id="living-sofa" name="Sofa" :position="[-4.5, 0, -1.0]" />
@@ -78,6 +80,18 @@ CURRENT OBJECTIVE: Encourage the player to sit down at the dining table and eat.
     <MomNpc id="mom" name="Mom" :position="[3.0, 0, -2.5]" is-static :description="momDescription">
       <InteractionIndicator :position="[0, 1.4, 0]" />
     </MomNpc>
+
+    <!-- ── Front door — south wall centre, leading outside ────────── -->
+    <Doorway
+      id="front-door-inside"
+      name="Front Door"
+      :position="[0, 0, 6.2]"
+      target-scene="home-exterior"
+      target-entrypoint="from-first-floor"
+      action-label="Go outside"
+    >
+      <InteractionIndicator :position="[0, 1.8, 0]" />
+    </Doorway>
 
     <!-- ── Staircase — north wall centred, leading upstairs ───────── -->
     <Staircase
