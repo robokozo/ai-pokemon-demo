@@ -1,9 +1,9 @@
 <script setup lang="ts">
 interface Props {
-  position: [number, number, number];
+  position: [number, number, number]
 }
 
-const { position } = defineProps<Props>();
+const { position } = defineProps<Props>()
 </script>
 
 <template>

@@ -1,119 +1,110 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
-import { useChromeAI } from "../composables/useChromeAI";
-import { useVoice } from "../composables/useVoice";
+import { ref, watch, nextTick } from "vue"
+import { useChromeAI } from "../../composables/useChromeAI"
+import { useVoice } from "../../composables/useVoice"
 
 interface Props {
-  npcName: string;
-  npcDescription: string;
-  visible: boolean;
+  npcName: string
+  npcDescription: string
+  visible: boolean
 }
 
 interface Message {
-  role: "player" | "npc";
-  text: string;
+  role: "player" | "npc"
+  text: string
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{ close: [] }>();
+const props = defineProps<Props>()
+const emit = defineEmits<{ close: [] }>()
 
-const messages = ref<Array<Message>>([]);
-const textInput = ref("");
-const isThinking = ref(false);
-const messagesContainer = ref<HTMLElement | null>(null);
+const messages = ref<Array<Message>>([])
+const textInput = ref("")
+const isThinking = ref(false)
+const messagesContainer = ref<HTMLElement | null>(null)
 
 const { status, sendMessage } = useChromeAI({
   characterName: props.npcName,
   characterDescription: props.npcDescription,
-});
-const {
-  recognitionSupported,
-  synthesisSupported,
-  isListening,
-  isSpeaking,
-  startListening,
-  stopListening,
-  speakText,
-  stopSpeaking,
-} = useVoice();
+})
+const { recognitionSupported, synthesisSupported, isListening, isSpeaking, startListening, stopListening, speakText, stopSpeaking } = useVoice()
 
 // Greet the player when dialog opens
 watch(
   () => props.visible,
   async (visible) => {
     if (visible && messages.value.length === 0) {
-      await greetPlayer();
+      await greetPlayer()
     }
   },
   { immediate: true },
-);
+)
 
 async function greetPlayer() {
-  isThinking.value = true;
-  const greeting = await sendMessage("*The player approaches and wants to talk to you.*");
-  isThinking.value = false;
-  messages.value.push({ role: "npc", text: greeting });
+  isThinking.value = true
+  const greeting = await sendMessage("*The player approaches and wants to talk to you.*")
+  isThinking.value = false
+  messages.value.push({ role: "npc", text: greeting })
   if (synthesisSupported.value === true) {
-    await speakText({ text: greeting, pitch: 1.2, rate: 0.9 });
+    await speakText({ text: greeting, pitch: 1.2, rate: 0.9 })
   }
-  scrollToBottom();
+  scrollToBottom()
 }
 
 async function sendText() {
-  const text = textInput.value.trim();
-  if (text.length === 0 || isThinking.value === true) return;
-  textInput.value = "";
-  await handlePlayerInput(text);
+  const text = textInput.value.trim()
+  if (text.length === 0 || isThinking.value === true) return
+  textInput.value = ""
+  await handlePlayerInput(text)
 }
 
 async function handleVoiceInput() {
   if (isListening.value) {
-    stopListening();
-    return;
+    stopListening()
+    return
   }
-  const spoken = await startListening();
+  const spoken = await startListening()
   if (spoken.length > 0) {
-    await handlePlayerInput(spoken);
+    await handlePlayerInput(spoken)
   }
 }
 
 async function handlePlayerInput(text: string) {
-  messages.value.push({ role: "player", text });
-  scrollToBottom();
+  messages.value.push({ role: "player", text })
+  scrollToBottom()
 
-  isThinking.value = true;
-  const response = await sendMessage(text);
-  isThinking.value = false;
+  isThinking.value = true
+  const response = await sendMessage(text)
+  isThinking.value = false
 
-  messages.value.push({ role: "npc", text: response });
-  scrollToBottom();
+  messages.value.push({ role: "npc", text: response })
+  scrollToBottom()
 
   if (synthesisSupported.value === true) {
-    await speakText({ text: response, pitch: 1.2, rate: 0.9 });
+    await speakText({ text: response, pitch: 1.2, rate: 0.9 })
   }
 }
 
 function handleClose() {
-  stopSpeaking();
-  stopListening();
-  emit("close");
+  stopSpeaking()
+  stopListening()
+  emit("close")
 }
 
 function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
-  });
+  })
 }
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && e.shiftKey !== true) {
-    e.preventDefault();
-    sendText();
+    e.preventDefault()
+    sendText()
   }
   if (e.key === "Escape") {
-    handleClose();
+    handleClose()
   }
 }
 </script>
@@ -138,15 +129,7 @@ function onKeydown(e: KeyboardEvent) {
                 error: status === 'error',
               }"
             >
-              {{
-                status === "ready"
-                  ? "🧠 AI"
-                  : status === "loading"
-                    ? "⏳ Loading AI…"
-                    : status === "unavailable"
-                      ? "💬 Scripted"
-                      : "⚠️ Fallback"
-              }}
+              {{ status === "ready" ? "🧠 AI" : status === "loading" ? "⏳ Loading AI…" : status === "unavailable" ? "💬 Scripted" : "⚠️ Fallback" }}
             </span>
           </div>
           <button class="close-btn" @click="handleClose" aria-label="Close dialog">✕</button>
@@ -192,9 +175,7 @@ function onKeydown(e: KeyboardEvent) {
             {{ isListening ? "🔴" : isSpeaking ? "🔊" : "🎤" }}
           </button>
 
-          <button class="send-btn" :disabled="isThinking || !textInput.trim()" @click="sendText">
-            Send
-          </button>
+          <button class="send-btn" :disabled="isThinking || !textInput.trim()" @click="sendText">Send</button>
         </div>
 
         <!-- Controls hint -->

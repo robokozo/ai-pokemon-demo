@@ -1,5 +1,5 @@
-import { reactive, ref } from 'vue'
-import * as THREE from 'three'
+import { reactive, ref } from "vue"
+import * as THREE from "three"
 
 export const TILE_SIZE = 1
 export const ROOM_WIDTH = 10
@@ -23,16 +23,16 @@ export interface GameState {
 export function useGameWorld() {
   const gameState = reactive<GameState>({
     player: {
-      id: 'player',
-      name: 'Player',
+      id: "player",
+      name: "Player",
       position: new THREE.Vector3(0, 0.25, 1),
       color: 0x4a90d9,
       isNPC: false,
     },
     npcs: [
       {
-        id: 'mom',
-        name: 'Mom',
+        id: "mom",
+        name: "Mom",
         position: new THREE.Vector3(-1.5, 0.25, -1.5),
         color: 0xe87ca0,
         isNPC: true,
@@ -77,19 +77,27 @@ export function useGameWorld() {
     let dz = 0
 
     const hasKeyInput =
-      keys['ArrowUp'] === true || keys['w'] === true || keys['W'] === true ||
-      keys['ArrowDown'] === true || keys['s'] === true || keys['S'] === true ||
-      keys['ArrowLeft'] === true || keys['a'] === true || keys['A'] === true ||
-      keys['ArrowRight'] === true || keys['d'] === true || keys['D'] === true
+      keys["ArrowUp"] === true ||
+      keys["w"] === true ||
+      keys["W"] === true ||
+      keys["ArrowDown"] === true ||
+      keys["s"] === true ||
+      keys["S"] === true ||
+      keys["ArrowLeft"] === true ||
+      keys["a"] === true ||
+      keys["A"] === true ||
+      keys["ArrowRight"] === true ||
+      keys["d"] === true ||
+      keys["D"] === true
 
     if (hasKeyInput === true) {
       // Keyboard input cancels any active tap destination
       clearTapDestination()
 
-      if (keys['ArrowUp'] === true || keys['w'] === true || keys['W'] === true) dz -= moveSpeed
-      if (keys['ArrowDown'] === true || keys['s'] === true || keys['S'] === true) dz += moveSpeed
-      if (keys['ArrowLeft'] === true || keys['a'] === true || keys['A'] === true) dx -= moveSpeed
-      if (keys['ArrowRight'] === true || keys['d'] === true || keys['D'] === true) dx += moveSpeed
+      if (keys["ArrowUp"] === true || keys["w"] === true || keys["W"] === true) dz -= moveSpeed
+      if (keys["ArrowDown"] === true || keys["s"] === true || keys["S"] === true) dz += moveSpeed
+      if (keys["ArrowLeft"] === true || keys["a"] === true || keys["A"] === true) dx -= moveSpeed
+      if (keys["ArrowRight"] === true || keys["d"] === true || keys["D"] === true) dx += moveSpeed
     } else if (tapDestination.value) {
       const dest = tapDestination.value
       const ddx = dest.x - pos.x
@@ -143,9 +151,7 @@ export function useGameWorld() {
     // Check for nearby NPCs
     gameState.nearbyNPC = null
     for (const npc of gameState.npcs) {
-      const dist = Math.sqrt(
-        (pos.x - npc.position.x) ** 2 + (pos.z - npc.position.z) ** 2,
-      )
+      const dist = Math.sqrt((pos.x - npc.position.x) ** 2 + (pos.z - npc.position.z) ** 2)
       if (dist <= gameState.interactionDistance) {
         gameState.nearbyNPC = npc
         break

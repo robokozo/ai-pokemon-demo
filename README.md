@@ -7,23 +7,27 @@ A 3D Pokémon-inspired RPG demo built with [TresJS](https://tresjs.org/) (Three.
 ## Controls
 
 ### Keyboard (Desktop)
-| Key | Action |
-|-----|--------|
-| `W` / `A` / `S` / `D` or Arrow Keys | Move the player |
-| `E` or `Space` | Talk to nearby NPC / toggle radio |
-| `Escape` | Close dialog |
+
+| Key                                 | Action                            |
+| ----------------------------------- | --------------------------------- |
+| `W` / `A` / `S` / `D` or Arrow Keys | Move the player                   |
+| `E` or `Space`                      | Talk to nearby NPC / toggle radio |
+| `Escape`                            | Close dialog                      |
 
 ### Tap / Click-to-Move (Desktop & Mobile)
+
 - **Tap or click anywhere on the game world** to make the player walk to that spot.
 - A golden marker appears at the destination and disappears when the player arrives.
 - **Keyboard input cancels** the current tap destination and resumes keyboard control.
 - The player will stop automatically if blocked for an extended period (e.g., colliding with an NPC).
 
 ### Mobile Interactions
+
 - Use the **"💬 Talk to Mom"** button (bottom-right) to open the dialog when the player is close.
 - Use the **"📻 Turn on/off radio"** button (bottom-right, appears when near the radio) to toggle music.
 
 ## Tech Stack
+
 - **Vue 3** with `<script setup>` SFCs
 - **Three.js / TresJS** for 3D rendering
 - **Chrome Gemini Nano** (on-device AI) for NPC conversations

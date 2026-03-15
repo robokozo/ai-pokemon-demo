@@ -1,46 +1,44 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted } from "vue"
 
-const voices = ref<Array<SpeechSynthesisVoice>>([]);
-const selectedVoiceIndex = ref(0);
-const testText = ref(
-  "And that was Ninja Loot in Nagrand — what a track! Coming up next, get ready for Pug Life Best Life!",
-);
-const pitch = ref(1.1);
-const rate = ref(1.0);
-const volume = ref(1.0);
-const isSpeaking = ref(false);
+const voices = ref<Array<SpeechSynthesisVoice>>([])
+const selectedVoiceIndex = ref(0)
+const testText = ref("And that was Ninja Loot in Nagrand — what a track! Coming up next, get ready for Pug Life Best Life!")
+const pitch = ref(1.1)
+const rate = ref(1.0)
+const volume = ref(1.0)
+const isSpeaking = ref(false)
 
 function loadVoices() {
-  const v = speechSynthesis.getVoices();
+  const v = speechSynthesis.getVoices()
   if (v.length) {
-    voices.value = v;
+    voices.value = v
   }
 }
 
 onMounted(() => {
-  loadVoices();
+  loadVoices()
   if (voices.value.length === 0) {
-    speechSynthesis.addEventListener("voiceschanged", () => loadVoices(), { once: true });
+    speechSynthesis.addEventListener("voiceschanged", () => loadVoices(), { once: true })
   }
-});
+})
 
 function speak() {
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(testText.value);
-  u.voice = voices.value[selectedVoiceIndex.value] ?? null;
-  u.pitch = pitch.value;
-  u.rate = rate.value;
-  u.volume = volume.value;
-  isSpeaking.value = true;
-  u.onend = () => (isSpeaking.value = false);
-  u.onerror = () => (isSpeaking.value = false);
-  speechSynthesis.speak(u);
+  speechSynthesis.cancel()
+  const u = new SpeechSynthesisUtterance(testText.value)
+  u.voice = voices.value[selectedVoiceIndex.value] ?? null
+  u.pitch = pitch.value
+  u.rate = rate.value
+  u.volume = volume.value
+  isSpeaking.value = true
+  u.onend = () => (isSpeaking.value = false)
+  u.onerror = () => (isSpeaking.value = false)
+  speechSynthesis.speak(u)
 }
 
 function stop() {
-  speechSynthesis.cancel();
-  isSpeaking.value = false;
+  speechSynthesis.cancel()
+  isSpeaking.value = false
 }
 </script>
 
@@ -51,9 +49,7 @@ function stop() {
     <div class="field">
       <label>Voice ({{ voices.length }} available)</label>
       <select v-model="selectedVoiceIndex">
-        <option v-for="(v, i) in voices" :key="v.name" :value="i">
-          {{ v.name }} ({{ v.lang }}){{ v.localService ? " ✓ local" : "" }}
-        </option>
+        <option v-for="(v, i) in voices" :key="v.name" :value="i">{{ v.name }} ({{ v.lang }}){{ v.localService ? " ✓ local" : "" }}</option>
       </select>
     </div>
 
@@ -85,8 +81,7 @@ function stop() {
     </div>
 
     <div v-if="voices.length > 0" class="voice-info">
-      <strong>Selected:</strong> {{ voices[selectedVoiceIndex]?.name }} &mdash;
-      {{ voices[selectedVoiceIndex]?.lang }} &mdash;
+      <strong>Selected:</strong> {{ voices[selectedVoiceIndex]?.name }} &mdash; {{ voices[selectedVoiceIndex]?.lang }} &mdash;
       {{ voices[selectedVoiceIndex]?.localService === true ? "local" : "remote" }}
     </div>
   </div>

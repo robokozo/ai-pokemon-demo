@@ -1,35 +1,31 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from "vue"
 
 interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
+  role: "user" | "assistant" | "system"
+  content: string
 }
 
-const systemPrompt = ref(
-  `You are a character in a small-town RPG. Stay in character at all times.`,
-);
-const userInput = ref("");
-const messages = ref<Array<Message>>([]);
-const isLoading = ref(false);
-const error = ref<string | null>(null);
-const temperature = ref(0.8);
-const topK = ref(40);
+const systemPrompt = ref(`You are a character in a small-town RPG. Stay in character at all times.`)
+const userInput = ref("")
+const messages = ref<Array<Message>>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+const temperature = ref(0.8)
+const topK = ref(40)
 
-let session: LanguageModelSession | null = null;
+let session: LanguageModelSession | null = null
 
-const isAIAvailable = typeof LanguageModel !== "undefined";
+const isAIAvailable = typeof LanguageModel !== "undefined"
 
 async function createSession() {
   if (session !== null) {
-    session.destroy();
-    session = null;
+    session.destroy()
+    session = null
   }
-  error.value = null;
+  error.value = null
 
-  const initialPrompts: Array<LanguageModelPromptMessage> = [
-    { role: "system", content: systemPrompt.value },
-  ];
+  const initialPrompts: Array<LanguageModelPromptMessage> = [{ role: "system", content: systemPrompt.value }]
 
   session = await LanguageModel.create({
     initialPrompts,
@@ -37,49 +33,49 @@ async function createSession() {
     topK: topK.value,
     expectedInputs: [{ type: "text" as const, languages: ["en"] }],
     expectedOutputs: [{ type: "text" as const, languages: ["en"] }],
-  });
+  })
 }
 
 async function send() {
-  const text = userInput.value.trim();
+  const text = userInput.value.trim()
   if (text.length === 0) {
-    return;
+    return
   }
 
-  messages.value.push({ role: "user", content: text });
-  userInput.value = "";
-  isLoading.value = true;
-  error.value = null;
+  messages.value.push({ role: "user", content: text })
+  userInput.value = ""
+  isLoading.value = true
+  error.value = null
 
   try {
     if (session === null) {
-      await createSession();
+      await createSession()
     }
     if (session === null) {
-      throw new Error("Session unavailable");
+      throw new Error("Session unavailable")
     }
-    const response = await session.prompt(text);
-    messages.value.push({ role: "assistant", content: response });
+    const response = await session.prompt(text)
+    messages.value.push({ role: "assistant", content: response })
   } catch (err) {
-    error.value = err instanceof Error ? err.message : "Unknown error";
+    error.value = err instanceof Error ? err.message : "Unknown error"
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
 function reset() {
   if (session !== null) {
-    session.destroy();
-    session = null;
+    session.destroy()
+    session = null
   }
-  messages.value = [];
-  error.value = null;
+  messages.value = []
+  error.value = null
 }
 
 function handleKeydown({ event }: { event: KeyboardEvent }) {
   if (event.key === "Enter" && event.shiftKey !== true) {
-    event.preventDefault();
-    send();
+    event.preventDefault()
+    send()
   }
 }
 </script>
@@ -87,8 +83,7 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
 <template>
   <div class="prompt-debug">
     <div v-if="isAIAvailable !== true" class="unavailable-banner">
-      Chrome AI (LanguageModel) is not available in this browser. Requires Chrome 138+ with the
-      Prompt API flag enabled.
+      Chrome AI (LanguageModel) is not available in this browser. Requires Chrome 138+ with the Prompt API flag enabled.
     </div>
 
     <div class="config-panel">
@@ -102,33 +97,17 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
       <div class="config-row sliders">
         <div class="field">
           <label>Temperature: {{ temperature.toFixed(2) }}</label>
-          <input
-            type="range"
-            v-model.number="temperature"
-            min="0"
-            max="2"
-            step="0.05"
-            @change="() => reset()"
-          />
+          <input type="range" v-model.number="temperature" min="0" max="2" step="0.05" @change="() => reset()" />
         </div>
         <div class="field">
           <label>Top-K: {{ topK }}</label>
-          <input
-            type="range"
-            v-model.number="topK"
-            min="1"
-            max="100"
-            step="1"
-            @change="() => reset()"
-          />
+          <input type="range" v-model.number="topK" min="1" max="100" step="1" @change="() => reset()" />
         </div>
       </div>
     </div>
 
     <div class="messages" aria-live="polite">
-      <div v-if="messages.length === 0" class="empty-state">
-        No messages yet. Type below to start.
-      </div>
+      <div v-if="messages.length === 0" class="empty-state">No messages yet. Type below to start.</div>
       <div v-for="(msg, i) in messages" :key="i" :class="['message', `message--${msg.role}`]">
         <span class="message-role">{{ msg.role }}</span>
         <span class="message-content">{{ msg.content }}</span>
@@ -149,15 +128,10 @@ function handleKeydown({ event }: { event: KeyboardEvent }) {
         @keydown="(e) => handleKeydown({ event: e })"
       />
       <div class="input-actions">
-        <button
-          @click="() => send()"
-          :disabled="isLoading === true || isAIAvailable !== true || userInput.trim().length === 0"
-        >
+        <button @click="() => send()" :disabled="isLoading === true || isAIAvailable !== true || userInput.trim().length === 0">
           {{ isLoading === true ? "Sending…" : "▶ Send" }}
         </button>
-        <button class="btn-reset" @click="() => reset()" :disabled="messages.length === 0">
-          ↺ Reset
-        </button>
+        <button class="btn-reset" @click="() => reset()" :disabled="messages.length === 0">↺ Reset</button>
       </div>
     </div>
   </div>

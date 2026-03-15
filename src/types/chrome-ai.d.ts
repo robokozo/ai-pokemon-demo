@@ -9,7 +9,7 @@
 /** A modality descriptor used in expectedInputs / expectedOutputs. */
 interface LanguageModelModality {
   /** For expectedOutputs, only 'text' is supported. */
-  type: 'text' | 'image' | 'audio'
+  type: "text" | "image" | "audio"
   /** BCP-47 language codes. Supported: 'en', 'ja', 'es'. */
   languages?: string[]
 }
@@ -17,7 +17,7 @@ interface LanguageModelModality {
 // ── LanguageModel.availability() ─────────────────────────────────────────────
 
 /** Return value of LanguageModel.availability(). */
-type LanguageModelAvailability = 'available' | 'downloading' | 'downloadable' | 'unavailable'
+type LanguageModelAvailability = "available" | "downloading" | "downloadable" | "unavailable"
 
 /**
  * Options for LanguageModel.availability().
@@ -33,7 +33,7 @@ interface LanguageModelAvailabilityOptions {
 
 /** A single message in the initialPrompts array. */
 interface LanguageModelPromptMessage {
-  role: 'system' | 'user' | 'assistant'
+  role: "system" | "user" | "assistant"
   content: string
   /** Set to true on the last assistant message to use it as a response prefix. */
   prefix?: boolean
@@ -125,7 +125,7 @@ interface AILanguageModelCreateOptions {
 }
 
 interface AILanguageModelCapabilities {
-  available: 'readily' | 'after-download' | 'no'
+  available: "readily" | "after-download" | "no"
   defaultTemperature?: number
   defaultTopK?: number
   maxTopK?: number

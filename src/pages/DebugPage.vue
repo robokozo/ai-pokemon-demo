@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { RouterLink } from "vue-router";
-import VoiceDebug from "../components/VoiceDebug.vue";
-import PromptDebug from "../components/PromptDebug.vue";
+import { ref } from "vue"
+import { RouterLink } from "vue-router"
+import VoiceDebug from "../components/ui/VoiceDebug.vue"
+import PromptDebug from "../components/ui/PromptDebug.vue"
 
-type DebugTab = "voice" | "prompt";
-const activeTab = ref<DebugTab>("voice");
+type DebugTab = "voice" | "prompt"
+const activeTab = ref<DebugTab>("voice")
 </script>
 
 <template>
@@ -17,18 +17,8 @@ const activeTab = ref<DebugTab>("voice");
     </nav>
 
     <div class="tab-bar">
-      <button
-        :class="['tab-btn', activeTab === 'voice' ? 'tab-btn--active' : '']"
-        @click="() => (activeTab = 'voice')"
-      >
-        🎤 Voice
-      </button>
-      <button
-        :class="['tab-btn', activeTab === 'prompt' ? 'tab-btn--active' : '']"
-        @click="() => (activeTab = 'prompt')"
-      >
-        🤖 Prompt
-      </button>
+      <button :class="['tab-btn', activeTab === 'voice' ? 'tab-btn--active' : '']" @click="() => (activeTab = 'voice')">🎤 Voice</button>
+      <button :class="['tab-btn', activeTab === 'prompt' ? 'tab-btn--active' : '']" @click="() => (activeTab = 'prompt')">🤖 Prompt</button>
     </div>
 
     <VoiceDebug v-if="activeTab === 'voice'" />

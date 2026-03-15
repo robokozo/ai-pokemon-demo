@@ -1,11 +1,11 @@
 <script setup lang="ts">
 interface Props {
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  state?: "on" | "off";
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  state?: "on" | "off"
 }
 
-const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>();
+const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
 </script>
 
 <template>

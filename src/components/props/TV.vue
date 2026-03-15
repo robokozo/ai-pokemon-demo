@@ -1,98 +1,93 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { useLoop } from "@tresjs/core";
-import { useTimeoutFn } from "@vueuse/core";
-import { useTVNews } from "../composables/useTVNews";
+import { ref, computed, watch } from "vue"
+import { useLoop } from "@tresjs/core"
+import { useTimeoutFn } from "@vueuse/core"
+import { useTVNews } from "../../composables/useTVNews"
 
 interface Props {
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  isOn?: boolean;
-  dialogOpen?: boolean;
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  isOn?: boolean
+  dialogOpen?: boolean
 }
 
-const {
-  position = [0, 0, 0],
-  rotation = [0, 0, 0],
-  isOn = false,
-  dialogOpen = false,
-} = defineProps<Props>();
+const { position = [0, 0, 0], rotation = [0, 0, 0], isOn = false, dialogOpen = false } = defineProps<Props>()
 
-const TV_INITIAL_DELAY_MS = 800;
+const TV_INITIAL_DELAY_MS = 800
 
 // Animated screen brightness — very subtle pulse between 0.85 and 1.1
-const screenPulse = ref(0);
+const screenPulse = ref(0)
 // Inset story box + ticker: appear when a new story starts, hide after it ends
-const showInset = ref(false);
-const showTicker = ref(false);
+const showInset = ref(false)
+const showTicker = ref(false)
 
-const { onBeforeRender } = useLoop();
+const { onBeforeRender } = useLoop()
 onBeforeRender(({ elapsed }) => {
   if (isOn === true) {
-    screenPulse.value = (Math.sin(elapsed * 1.26) + 1) / 2;
+    screenPulse.value = (Math.sin(elapsed * 1.26) + 1) / 2
   }
-});
+})
 
 // Emissive intensity: 0.9 → 1.0
-const screenBrightness = computed(() => 0.9 + screenPulse.value * 0.1);
+const screenBrightness = computed(() => 0.9 + screenPulse.value * 0.1)
 // Emissive color: dim blue-grey → mid bright blue
 const screenEmissive = computed(() => {
-  const t = screenPulse.value;
-  const r = Math.round(0x1a + t * (0x4a - 0x1a));
-  const g = Math.round(0x4a + t * (0xa0 - 0x4a));
-  const b = Math.round(0x6a + t * (0xe0 - 0x6a));
-  return `rgb(${r},${g},${b})`;
-});
-const TV_RESUME_DELAY_MS = 4000;
+  const t = screenPulse.value
+  const r = Math.round(0x1a + t * (0x4a - 0x1a))
+  const g = Math.round(0x4a + t * (0xa0 - 0x4a))
+  const b = Math.round(0x6a + t * (0xe0 - 0x6a))
+  return `rgb(${r},${g},${b})`
+})
+const TV_RESUME_DELAY_MS = 4000
 
-const tvNews = useTVNews();
+const tvNews = useTVNews()
 const { start: startResumeTimer, stop: stopResumeTimer } = useTimeoutFn(
   () => {
     if (isOn === true) {
-      tvNews.start();
+      tvNews.start()
     }
   },
   TV_RESUME_DELAY_MS,
   { immediate: false },
-);
+)
 
 tvNews.onStoryStart(() => {
-  showInset.value = true;
-  showTicker.value = true;
-});
+  showInset.value = true
+  showTicker.value = true
+})
 
 tvNews.onStoryEnd(() => {
-  showInset.value = false;
-  showTicker.value = false;
-});
+  showInset.value = false
+  showTicker.value = false
+})
 
 // Start/stop the news broadcast when the TV is switched on/off
 watch(
   () => isOn,
   (nowOn) => {
     if (nowOn === true) {
-      tvNews.start(TV_INITIAL_DELAY_MS);
+      tvNews.start(TV_INITIAL_DELAY_MS)
     } else {
-      stopResumeTimer();
-      tvNews.stop();
+      stopResumeTimer()
+      tvNews.stop()
     }
   },
-);
+)
 
 // Pause speech while a dialog is open; resume after it closes
 watch(
   () => dialogOpen,
   (isOpen) => {
     if (isOpen === true) {
-      stopResumeTimer();
-      tvNews.stop();
+      stopResumeTimer()
+      tvNews.stop()
     } else {
       if (isOn === true) {
-        startResumeTimer();
+        startResumeTimer()
       }
     }
   },
-);
+)
 </script>
 
 <template>
@@ -187,37 +182,21 @@ watch(
         <!-- Inset background -->
         <TresMesh :position="[-0.27, 1.19, 0.156]">
           <TresBoxGeometry :args="[0.38, 0.21, 0.005]" />
-          <TresMeshLambertMaterial
-            color="#0a1520"
-            :emissive="'#0a1520'"
-            :emissive-intensity="0.5"
-          />
+          <TresMeshLambertMaterial color="#0a1520" :emissive="'#0a1520'" :emissive-intensity="0.5" />
         </TresMesh>
         <!-- Inset accent border (top) -->
         <TresMesh :position="[-0.27, 1.302, 0.157]">
           <TresBoxGeometry :args="[0.38, 0.014, 0.005]" />
-          <TresMeshLambertMaterial
-            color="#ff4422"
-            :emissive="'#ff4422'"
-            :emissive-intensity="0.8"
-          />
+          <TresMeshLambertMaterial color="#ff4422" :emissive="'#ff4422'" :emissive-intensity="0.8" />
         </TresMesh>
         <!-- Inset content lines (simulated image/map) -->
         <TresMesh :position="[-0.27, 1.2, 0.157]">
           <TresBoxGeometry :args="[0.3, 0.025, 0.004]" />
-          <TresMeshLambertMaterial
-            color="#2a4a6a"
-            :emissive="'#2a4a6a'"
-            :emissive-intensity="0.4"
-          />
+          <TresMeshLambertMaterial color="#2a4a6a" :emissive="'#2a4a6a'" :emissive-intensity="0.4" />
         </TresMesh>
         <TresMesh :position="[-0.27, 1.16, 0.157]">
           <TresBoxGeometry :args="[0.22, 0.025, 0.004]" />
-          <TresMeshLambertMaterial
-            color="#2a4a6a"
-            :emissive="'#2a4a6a'"
-            :emissive-intensity="0.4"
-          />
+          <TresMeshLambertMaterial color="#2a4a6a" :emissive="'#2a4a6a'" :emissive-intensity="0.4" />
         </TresMesh>
       </TresGroup>
 

@@ -1,11 +1,11 @@
-import { ref, computed } from 'vue'
-import { useSpeechRecognition, useSpeechSynthesis } from '@vueuse/core'
+import { ref, computed } from "vue"
+import { useSpeechRecognition, useSpeechSynthesis } from "@vueuse/core"
 
 export function useVoice() {
   const isListening = ref(false)
   const isSpeaking = ref(false)
-  const transcript = ref('')
-  const voiceError = ref<string>('')
+  const transcript = ref("")
+  const voiceError = ref<string>("")
 
   // --- Speech Recognition ---
   const {
@@ -16,7 +16,7 @@ export function useVoice() {
     stop: stopRecognition,
     error: recognitionError,
   } = useSpeechRecognition({
-    lang: 'en-US',
+    lang: "en-US",
     interimResults: false,
     continuous: false,
   })
@@ -26,12 +26,12 @@ export function useVoice() {
 
   async function startListening(): Promise<string> {
     if (recognitionSupported.value !== true) {
-      voiceError.value = 'Speech recognition is not supported in this browser.'
-      return ''
+      voiceError.value = "Speech recognition is not supported in this browser."
+      return ""
     }
 
     return new Promise((resolve) => {
-      recognitionResult.value = ''
+      recognitionResult.value = ""
       isListening.value = true
 
       startRecognition()
@@ -68,9 +68,9 @@ export function useVoice() {
   const utterance = ref<SpeechSynthesisUtterance | null>(null)
 
   const { isSupported: synthesisSupported } = useSpeechSynthesis(
-    computed(() => utterance.value?.text ?? ''),
+    computed(() => utterance.value?.text ?? ""),
     {
-      lang: 'en-US',
+      lang: "en-US",
       pitch: 1.1,
       rate: 0.95,
       volume: 1,
@@ -83,23 +83,19 @@ export function useVoice() {
     const voices = window.speechSynthesis.getVoices()
     if (voices.length > 0) return Promise.resolve(voices)
     return new Promise((resolve) => {
-      window.speechSynthesis.addEventListener(
-        'voiceschanged',
-        () => resolve(window.speechSynthesis.getVoices()),
-        { once: true },
-      )
+      window.speechSynthesis.addEventListener("voiceschanged", () => resolve(window.speechSynthesis.getVoices()), { once: true })
     })
   }
 
   async function speakText({ text, pitch, rate }: { text: string; pitch?: number; rate?: number }): Promise<void> {
     if (synthesisSupported.value !== true) {
-      voiceError.value = 'Speech synthesis is not supported in this browser.'
+      voiceError.value = "Speech synthesis is not supported in this browser."
       return
     }
 
     // Create utterance with options
     const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'en-US'
+    u.lang = "en-US"
     u.pitch = pitch ?? 1.1
     u.rate = rate ?? 0.95
     u.volume = 1
@@ -108,14 +104,14 @@ export function useVoice() {
     const voices = await getAvailableVoices()
     const femaleVoice = voices.find(
       (v) =>
-        v.lang.startsWith('en') &&
-        (v.name.toLowerCase().includes('female') ||
-          v.name.toLowerCase().includes('woman') ||
-          v.name.includes('Samantha') ||
-          v.name.includes('Victoria') ||
-          v.name.includes('Karen') ||
-          v.name.includes('Moira') ||
-          v.name.includes('Tessa')),
+        v.lang.startsWith("en") &&
+        (v.name.toLowerCase().includes("female") ||
+          v.name.toLowerCase().includes("woman") ||
+          v.name.includes("Samantha") ||
+          v.name.includes("Victoria") ||
+          v.name.includes("Karen") ||
+          v.name.includes("Moira") ||
+          v.name.includes("Tessa")),
     )
     if (femaleVoice !== undefined) {
       u.voice = femaleVoice

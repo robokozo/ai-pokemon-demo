@@ -84,9 +84,9 @@
 - Never pass bare function references into callbacks. Use inline arrow functions:
   ```ts
   // Preferred
-  array.map((x) => doStuff(x));
+  array.map((x) => doStuff(x))
   // Not preferred
-  array.map(doStuff);
+  array.map(doStuff)
   ```
 
 ## Vue API
@@ -94,15 +94,15 @@
 - Composition API only.
 - Use type-only generics for `defineProps` and `defineModel`:
   ```ts
-  defineProps<{ id: string }>();
+  defineProps<{ id: string }>()
   ```
 - SFC section order: `<script>` → `<template>` → `<style>`.
 - Avoid boolean props. Prefer a string union `state` prop instead — it's more expressive and extensible:
   ```ts
   // Preferred
-  defineProps<{ state: "idle" | "active" | "disabled" }>();
+  defineProps<{ state: "idle" | "active" | "disabled" }>()
   // Not preferred
-  defineProps<{ isActive: boolean; isDisabled: boolean }>();
+  defineProps<{ isActive: boolean; isDisabled: boolean }>()
   ```
   This lets future states (e.g. `'malfunctioning'`, `'paused'`) be added without new props, and can often replace multiple booleans with a single value.
 - Prefer props/emits for all component communication. Avoid `defineExpose` + template refs to call component methods — if the parent needs to trigger behaviour, lift the state up to the parent and pass it down as a prop; the child reacts via `watch`. Reserve template refs for cases that genuinely require imperative access (e.g. DOM focus, canvas APIs).
