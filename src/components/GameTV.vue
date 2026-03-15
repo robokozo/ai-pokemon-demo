@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from "vue";
+import { watch, onUnmounted } from "vue";
 import { useTVNews } from "../composables/useTVNews";
 import InteractionIndicator from "./InteractionIndicator.vue";
 
 interface Props {
   position?: [number, number, number];
   rotation?: [number, number, number];
+  isOn?: boolean;
   showIndicator?: boolean;
   dialogOpen?: boolean;
 }
@@ -13,6 +14,7 @@ interface Props {
 const {
   position = [0, 0, 0],
   rotation = [0, 0, 0],
+  isOn = false,
   showIndicator = false,
   dialogOpen = false,
 } = defineProps<Props>();
@@ -20,22 +22,24 @@ const {
 const TV_INITIAL_DELAY_MS = 800;
 const TV_RESUME_DELAY_MS = 4000;
 
-const isOn = ref(false);
 const tvNews = useTVNews();
 let resumeTimerId: ReturnType<typeof setTimeout> | null = null;
 
-function toggle() {
-  isOn.value = !isOn.value;
-  if (isOn.value === true) {
-    tvNews.start(TV_INITIAL_DELAY_MS);
-  } else {
-    if (resumeTimerId !== null) {
-      clearTimeout(resumeTimerId);
-      resumeTimerId = null;
+// Start/stop the news broadcast when the TV is switched on/off
+watch(
+  () => isOn,
+  (nowOn) => {
+    if (nowOn === true) {
+      tvNews.start(TV_INITIAL_DELAY_MS);
+    } else {
+      if (resumeTimerId !== null) {
+        clearTimeout(resumeTimerId);
+        resumeTimerId = null;
+      }
+      tvNews.stop();
     }
-    tvNews.stop();
-  }
-}
+  },
+);
 
 // Pause speech while a dialog is open; resume after it closes
 watch(
@@ -48,10 +52,10 @@ watch(
       }
       tvNews.stop();
     } else {
-      if (isOn.value === true) {
+      if (isOn === true) {
         resumeTimerId = setTimeout(() => {
           resumeTimerId = null;
-          if (isOn.value === true) {
+          if (isOn === true) {
             tvNews.start();
           }
         }, TV_RESUME_DELAY_MS);
@@ -67,8 +71,6 @@ onUnmounted(() => {
   }
   tvNews.stop();
 });
-
-defineExpose({ toggle, isOn });
 </script>
 
 <template>

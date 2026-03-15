@@ -111,13 +111,10 @@ const nearTV = computed(() => {
   return Math.sqrt(dx * dx + dz * dz) < TV_INTERACT_DISTANCE;
 });
 
-const tvRef = ref<InstanceType<typeof GameTV> | null>(null);
-const tvOn = computed(() => tvRef.value?.isOn === true);
+const tvOn = ref(false);
 
 function toggleTV() {
-  if (tvRef.value !== null) {
-    tvRef.value.toggle();
-  }
+  tvOn.value = !tvOn.value;
 }
 
 // ── Interaction ───────────────────────────────────────────────────────────────
@@ -506,9 +503,9 @@ CURRENT OBJECTIVE: You want your child to come downstairs. No matter what the pl
 
       <!-- ── TV ── -->
       <GameTV
-        ref="tvRef"
         :position="[TV_POSITION.x, 0, TV_POSITION.z]"
         :rotation="[0, -Math.PI / 2, 0]"
+        :is-on="tvOn"
         :dialog-open="dialogOpen"
         :show-indicator="nearTV === true && dialogOpen !== true"
       />
