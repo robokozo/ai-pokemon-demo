@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGLTF } from "@tresjs/cientos"
-import { useEntity } from "../useEntity"
+import { useEcsEntity } from "../ecs/useEcsEntity"
 import { useDialogStore } from "../dialog/useDialogStore"
 
 interface Props {
@@ -15,7 +15,7 @@ const { id, name = "NPC", position = [-1.5, 0, -1.5], isStatic, description = ""
 
 const dialog = useDialogStore()
 
-const entity = useEntity({
+const { eid } = useEcsEntity({
   id,
   name,
   kind: "npc",
@@ -23,11 +23,9 @@ const entity = useEntity({
   interactive: true,
   isStatic,
   position,
-  onInteract: () => dialog.openDialog({ entity, description }),
+  onInteract: () => dialog.openDialog({ eid, name: "Mom", kind: "npc", description }),
   actionLabel: () => `Talk to ${name}`,
 })
-
-const { position: entityPosition } = entity
 
 const { state: model } = useGLTF(`${import.meta.env.BASE_URL}models/anju.glb`)
 
@@ -35,7 +33,7 @@ const MODEL_SCALE = 0.028 as const
 </script>
 
 <template>
-  <TresGroup :position="[entityPosition.x, entityPosition.y, entityPosition.z]">
+  <TresGroup :position="position">
     <primitive v-if="model !== null" :object="model.scene.clone()" :scale="[MODEL_SCALE, MODEL_SCALE, MODEL_SCALE]" />
 
     <!-- Fallback box while model loads -->

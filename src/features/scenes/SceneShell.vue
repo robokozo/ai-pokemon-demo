@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onUnmounted } from "vue"
 import { TresCanvas } from "@tresjs/core"
 import { EffectComposerPmndrs, BloomPmndrs } from "@tresjs/post-processing"
 import Player from "../player/Player.vue"
@@ -6,6 +7,7 @@ import DestinationMarker from "../player/DestinationMarker.vue"
 import OcclusionRevealer from "../camera/OcclusionRevealer.vue"
 import { useSceneSetup } from "./useSceneSetup"
 import type { SceneConfig } from "./useSceneSetup"
+import { usePhysicsStore } from "../physics/usePhysicsStore"
 
 interface Props {
   config: SceneConfig
@@ -16,6 +18,15 @@ interface Props {
 }
 
 const { config, clearColor = "#1a1a2e", ambientIntensity = 1.5, directionalIntensity = 0.4, directionalPosition = [2, 6, 3] } = defineProps<Props>()
+
+const physicsStore = usePhysicsStore()
+
+// Create a fresh Rapier physics world for this scene.
+physicsStore.createSceneWorld()
+
+onUnmounted(() => {
+  physicsStore.destroySceneWorld()
+})
 
 const { floorTiles, solidFloorColor, roomWidth, roomHeight, cameraPosition, cameraLookAt, spawnPosition, gameState } = useSceneSetup(config)
 </script>

@@ -13,12 +13,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "@tresjs/cientos": "^5.6.0",
     "@tresjs/core": "^5.7.0",
     "@tresjs/leches": "^1.1.4",
     "@tresjs/post-processing": "^3.6.0",
     "@types/three": "^0.183.1",
     "@vueuse/core": "^14.2.1",
+    "bitecs": "^0.4.0",
     "es-toolkit": "^1.45.1",
     "pinia": "^3.0.4",
     "three": "^0.183.2",

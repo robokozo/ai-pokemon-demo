@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../../useEntity"
+import { useEcsEntity } from "../../ecs/useEcsEntity"
 
 interface Props {
   position?: [number, number, number]
@@ -9,7 +9,7 @@ interface Props {
 
 const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
 
-useEntity({
+useEcsEntity({
   name: "RadioBody",
   kind: "prop",
   collider: "none",

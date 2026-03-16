@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../../useEntity"
+import { useEcsEntity } from "../../ecs/useEcsEntity"
 import { useRadio } from "./useRadio"
 
 interface Props {
@@ -12,7 +12,7 @@ const { position = [0, 0, 0], rotation = [0, 0, 0], castShadow = false } = defin
 
 const { radioState, toggle } = useRadio()
 
-useEntity({
+useEcsEntity({
   id: "radio",
   name: "Radio",
   kind: "prop",

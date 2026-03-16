@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../../useEntity"
+import { useEcsEntity } from "../../ecs/useEcsEntity"
 
 interface Props {
   id?: string
@@ -17,7 +17,7 @@ const POST_COUNT = Math.max(2, Math.round(width / 1.5) + 1)
 const FENCE_HEIGHT = 0.5
 const POST_HEIGHT = 0.6
 
-useEntity({
+useEcsEntity({
   id,
   name,
   kind: "prop",

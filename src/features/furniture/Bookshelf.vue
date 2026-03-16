@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../useEntity"
+import { useEcsEntity } from "../ecs/useEcsEntity"
 
 interface Props {
   id?: string
@@ -10,7 +10,7 @@ interface Props {
 
 const { id, name, position = [0, 0, 0], castShadow = false } = defineProps<Props>()
 
-useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: 0.2, hd: 1.0 }, isStatic: true, position })
+useEcsEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: 0.2, hd: 1.0 }, isStatic: true, position })
 </script>
 
 <template>

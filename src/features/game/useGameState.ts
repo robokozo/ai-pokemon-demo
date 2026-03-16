@@ -1,11 +1,17 @@
 import { defineStore } from "pinia"
 import { ref } from "vue"
-import type { EntityPosition, SceneEntity } from "../entities/entity"
+
+export interface TapDestination {
+  x: number
+  y: number
+  z: number
+}
 
 export const useGameState = defineStore("gameState", () => {
   const paused = ref(false)
-  const tapDestination = ref<EntityPosition | null>(null)
-  const nearbyEntity = ref<SceneEntity | null>(null)
+  const tapDestination = ref<TapDestination | null>(null)
+  // Stores a bitECS entity ID instead of a SceneEntity reference.
+  const nearbyEntity = ref<number | null>(null)
 
   function setPaused(value: boolean) {
     paused.value = value

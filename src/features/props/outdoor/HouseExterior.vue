@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../../useEntity"
+import { useEcsEntity } from "../../ecs/useEcsEntity"
 
 interface Props {
   id?: string
@@ -10,7 +10,7 @@ interface Props {
 
 const { id = "house", name = "House", position = [0, 0, 0], castShadow = false } = defineProps<Props>()
 
-useEntity({
+useEcsEntity({
   id,
   name,
   kind: "prop",

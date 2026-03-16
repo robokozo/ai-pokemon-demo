@@ -1,28 +1,35 @@
 import { defineStore } from "pinia"
 import { ref } from "vue"
-import type { SceneEntity } from "../entities/entity"
 import { useGameState } from "../game/useGameState"
 
 export const useDialogStore = defineStore("dialog", () => {
   const gameState = useGameState()
 
-  const dialogEntity = ref<SceneEntity | null>(null)
+  const dialogEntityId = ref<number | null>(null)
+  const dialogEntityName = ref<string | null>(null)
+  const dialogEntityKind = ref<string | null>(null)
   const dialogDescription = ref<string | null>(null)
 
-  function openDialog({ entity, description = "" }: { entity: SceneEntity; description?: string }) {
-    dialogEntity.value = entity
+  function openDialog({ eid, name, kind, description = "" }: { eid: number; name: string; kind: string; description?: string }) {
+    dialogEntityId.value = eid
+    dialogEntityName.value = name
+    dialogEntityKind.value = kind
     dialogDescription.value = description
     gameState.setPaused(true)
   }
 
   function closeDialog() {
-    dialogEntity.value = null
+    dialogEntityId.value = null
+    dialogEntityName.value = null
+    dialogEntityKind.value = null
     dialogDescription.value = null
     gameState.setPaused(false)
   }
 
   return {
-    dialogEntity,
+    dialogEntityId,
+    dialogEntityName,
+    dialogEntityKind,
     dialogDescription,
     openDialog,
     closeDialog,

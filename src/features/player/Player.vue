@@ -1,34 +1,43 @@
 <script setup lang="ts">
+import { shallowRef } from "vue"
 import { useLoop } from "@tresjs/core"
 import { useGLTF } from "@tresjs/cientos"
-import { useEntity } from "../useEntity"
-import { usePlayerMovement } from "../usePlayerMovement"
-import type { KeyMap } from "../usePlayerMovement"
+import type { Group } from "three"
+import { useEcsEntity } from "../ecs/useEcsEntity"
+import { useEcsPosition } from "../ecs/useEcsPosition"
+import { useGameLoop } from "../ecs/useGameLoop"
+import { useInputCapture } from "../ecs/useInputCapture"
 
 interface Props {
-  id?: string
-  name?: string
   initialPosition?: [number, number, number]
-  keyMap?: KeyMap
 }
 
-const { id, name, initialPosition = [0, 0, 1], keyMap } = defineProps<Props>()
+const { initialPosition = [0, 0, 1] } = defineProps<Props>()
 
-const { position } = useEntity({ id, name, kind: "player", collider: "solid", position: initialPosition })
-const { tick, facing } = usePlayerMovement({ position, keyMap })
+const { eid } = useEcsEntity({ kind: "player", collider: "solid", position: initialPosition })
+const { getPosition } = useEcsPosition({ eid })
+const { keys } = useInputCapture()
+const { facing } = useGameLoop({ keys })
 
 const { state: model } = useGLTF(`${import.meta.env.BASE_URL}models/nathan.glb`)
 
 const MODEL_SCALE = 0.085 as const
 
+const groupRef = shallowRef<Group | null>(null)
+
 const { onBeforeRender } = useLoop()
 onBeforeRender(() => {
-  tick()
+  const group = groupRef.value
+  if (group === null) return
+
+  const pos = getPosition()
+  group.position.set(pos.x, 0, pos.z)
+  group.rotation.set(0, facing.value, 0)
 })
 </script>
 
 <template>
-  <TresGroup :position="[position.x, 0, position.z]" :rotation="[0, facing, 0]" :user-data="{ isPlayer: true }">
+  <TresGroup ref="groupRef" :user-data="{ isPlayer: true }">
     <primitive v-if="model !== null" :object="model.scene.clone()" :scale="[MODEL_SCALE, MODEL_SCALE, MODEL_SCALE]" />
 
     <!-- Fallback box while model loads -->

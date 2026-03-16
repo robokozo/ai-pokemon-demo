@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { computed, ref, onMounted } from "vue"
 import { useEventListener } from "@vueuse/core"
 import { useGameState } from "../features/game/useGameState"
 import { useDialogStore } from "../features/dialog/useDialogStore"
+import { useEcsStore } from "../features/ecs/useEcsStore"
+import { usePhysicsStore } from "../features/physics/usePhysicsStore"
+import { initPhysics } from "../features/physics/initPhysics"
 import SceneTransition from "../features/transitions/SceneTransition.vue"
 import PlayerBedroom from "../features/scenes/player-house/PlayerBedroom.vue"
 import FirstFloor from "../features/scenes/player-house/FirstFloor.vue"
@@ -11,23 +14,39 @@ import DialogBox from "../features/ui/DialogBox.vue"
 
 const gameState = useGameState()
 const dialog = useDialogStore()
+const ecsStore = useEcsStore()
+const physicsStore = usePhysicsStore()
 
 const isControlsOpen = ref(false)
 
+// Initialize Rapier WASM before rendering any scenes.
+onMounted(async () => {
+  await initPhysics()
+})
+
 useEventListener(window, "keydown", (e: KeyboardEvent) => {
-  if (e.key === "Escape" && dialog.dialogEntity !== null) {
+  if (e.key === "Escape" && dialog.dialogEntityId !== null) {
     dialog.closeDialog()
   }
+})
+
+// Compute nearby entity metadata for the HUD.
+const nearbyMeta = computed(() => {
+  if (gameState.nearbyEntity === null) return null
+  return ecsStore.getMetadata({ eid: gameState.nearbyEntity })
 })
 </script>
 
 <template>
   <div class="game-container">
-    <SceneTransition v-slot="{ visibleScene }">
-      <PlayerBedroom v-if="visibleScene === 'bedroom'" />
-      <FirstFloor v-else-if="visibleScene === 'first-floor'" />
-      <HomeExterior v-else-if="visibleScene === 'home-exterior'" />
-    </SceneTransition>
+    <template v-if="physicsStore.isReady === true">
+      <SceneTransition v-slot="{ visibleScene }">
+        <PlayerBedroom v-if="visibleScene === 'bedroom'" />
+        <FirstFloor v-else-if="visibleScene === 'first-floor'" />
+        <HomeExterior v-else-if="visibleScene === 'home-exterior'" />
+      </SceneTransition>
+    </template>
+    <div v-else class="loading">Loading physics...</div>
 
     <!-- ── HUD overlay ── -->
     <div class="hud">
@@ -50,18 +69,18 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
       </div>
 
       <!-- Actions — shown when near an interactable and no dialog is open -->
-      <div v-if="dialog.dialogEntity === null && gameState.nearbyEntity !== null" class="hud-panel">
+      <div v-if="dialog.dialogEntityId === null && nearbyMeta !== null" class="hud-panel">
         <div class="hud-panel-header">
           <span class="panel-title">Actions</span>
         </div>
         <div class="hud-panel-body">
           <button
             class="hud-action"
-            :aria-label="gameState.nearbyEntity.actionLabel?.()"
-            @pointerdown.stop.prevent="gameState.nearbyEntity?.onInteract?.()"
+            :aria-label="nearbyMeta.actionLabel?.()"
+            @pointerdown.stop.prevent="nearbyMeta.onInteract?.()"
           >
-            <span>{{ gameState.nearbyEntity.kind === "npc" ? "💬" : "⚡" }}</span>
-            <span>{{ gameState.nearbyEntity.actionLabel?.() }}</span>
+            <span>{{ nearbyMeta.kind === "npc" ? "💬" : "⚡" }}</span>
+            <span>{{ nearbyMeta.actionLabel?.() }}</span>
           </button>
         </div>
       </div>
@@ -69,8 +88,8 @@ useEventListener(window, "keydown", (e: KeyboardEvent) => {
 
     <!-- ── Dialog Box ── -->
     <DialogBox
-      v-if="dialog.dialogEntity?.kind === 'npc'"
-      :npc-name="dialog.dialogEntity.name"
+      v-if="dialog.dialogEntityKind === 'npc'"
+      :npc-name="dialog.dialogEntityName ?? ''"
       :npc-description="dialog.dialogDescription ?? ''"
       :visible="true"
       @close="dialog.closeDialog()"
@@ -209,6 +228,16 @@ kbd {
 
 /* Tap-to-move row in controls panel */
 .control-row--touch .touch-icon {
+  font-size: 0.9rem;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 </style>

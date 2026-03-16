@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../useEntity"
+import { useEcsEntity } from "../ecs/useEcsEntity"
 
 const WALL_HEIGHT = 2.5
 
@@ -15,7 +15,7 @@ interface Props {
 
 const { id, name, position, width, depth, color = "#8b7355", castShadow = false } = defineProps<Props>()
 
-useEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
+useEcsEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
 </script>
 
 <template>

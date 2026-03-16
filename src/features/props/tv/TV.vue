@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { useTVNews } from "./useTVNews"
-import { useEntity } from "../../useEntity"
+import { useEcsEntity } from "../../ecs/useEcsEntity"
 import TVStand from "../../furniture/TVStand.vue"
 
 interface Props {
@@ -19,7 +19,7 @@ function toggleTV() {
 }
 
 // Interactive entity — TVStand handles the solid collision
-useEntity({
+useEcsEntity({
   id: "tv",
   name: "TV",
   kind: "prop",

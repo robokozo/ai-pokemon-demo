@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEntity } from "../useEntity"
+import { useEcsEntity } from "../ecs/useEcsEntity"
 import { useSceneNavigation } from "../scenes/useSceneNavigation"
 import type { SceneName } from "../scenes/useSceneNavigation"
 
@@ -27,7 +27,7 @@ const {
 
 const sceneNav = useSceneNavigation()
 
-useEntity({
+useEcsEntity({
   id,
   name,
   kind: "prop",

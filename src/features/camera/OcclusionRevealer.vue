@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useLoop } from "@tresjs/core"
 import * as THREE from "three"
-import { useEntityStore } from "../entities/useEntityStore"
+import { useEcsStore } from "../ecs/useEcsStore"
 import { useSceneNavigation } from "../scenes/useSceneNavigation"
 
 const OCCLUDED_OPACITY = 0.25
 
-const entityStore = useEntityStore()
+const ecsStore = useEcsStore()
 const sceneNav = useSceneNavigation()
 
 const raycaster = new THREE.Raycaster()
@@ -60,14 +60,13 @@ function restoreGroup(savedMaterials: Array<SavedMaterial>) {
 const { onBeforeRender } = useLoop()
 
 onBeforeRender(({ scene }) => {
-  const player = entityStore.getPlayer()
+  const pp = ecsStore.playerPosition
   const cam = sceneNav.camera
   const sceneObj = scene.value
-  if (player === null || cam === null || sceneObj == null) return
+  if (cam === null || sceneObj == null) return
 
-  // Compute camera position ourselves from the same offset data SceneShell uses
-  camPosition.set(player.position.x + cam.offset.x, cam.offset.y, player.position.z + cam.offset.z)
-  playerTarget.set(player.position.x, 0.5, player.position.z)
+  camPosition.set(pp.x + cam.offset.x, cam.offset.y, pp.z + cam.offset.z)
+  playerTarget.set(pp.x, 0.5, pp.z)
   direction.copy(playerTarget).sub(camPosition).normalize()
   const distanceToPlayer = camPosition.distanceTo(playerTarget)
 

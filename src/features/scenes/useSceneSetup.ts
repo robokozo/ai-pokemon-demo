@@ -1,7 +1,7 @@
 import { computed } from "vue"
 import { useSceneNavigation } from "./useSceneNavigation"
 import type { SceneCamera } from "./useSceneNavigation"
-import { useEntityStore } from "../entities/useEntityStore"
+import { useEcsStore } from "../ecs/useEcsStore"
 import { useGameState } from "../game/useGameState"
 
 export interface Tile {
@@ -20,7 +20,7 @@ export interface SceneConfig {
 
 export function useSceneSetup({ roomWidth, roomHeight, floorColors, camera, entryPoints }: SceneConfig) {
   const sceneNav = useSceneNavigation()
-  const entityStore = useEntityStore()
+  const ecsStore = useEcsStore()
   const gameState = useGameState()
 
   // ── Floor tiles ──────────────────────────────────────────────────────────────
@@ -44,17 +44,13 @@ export function useSceneSetup({ roomWidth, roomHeight, floorColors, camera, entr
   sceneNav.setCamera(camera)
 
   const cameraPosition = computed<[number, number, number]>(() => {
-    const player = entityStore.getPlayer()
-    const px = player !== null ? player.position.x : 0
-    const pz = player !== null ? player.position.z : 0
-    return [px + camera.offset.x, camera.offset.y, pz + camera.offset.z]
+    const pp = ecsStore.playerPosition
+    return [pp.x + camera.offset.x, camera.offset.y, pp.z + camera.offset.z]
   })
 
   const cameraLookAt = computed<[number, number, number]>(() => {
-    const player = entityStore.getPlayer()
-    const px = player !== null ? player.position.x : 0
-    const pz = player !== null ? player.position.z : 0
-    return [px, 0, pz]
+    const pp = ecsStore.playerPosition
+    return [pp.x, 0, pp.z]
   })
 
   // ── Spawn ────────────────────────────────────────────────────────────────────
