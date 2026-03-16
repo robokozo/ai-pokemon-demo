@@ -1,6 +1,7 @@
 import { reactive } from "vue"
 import * as THREE from "three"
 import { useEventListener } from "@vueuse/core"
+import { query } from "bitecs"
 import { useEcsStore } from "./useEcsStore"
 import { usePhysicsStore } from "../physics/usePhysicsStore"
 import { useGameState } from "../game/useGameState"
@@ -57,7 +58,10 @@ export function useInputCapture(): { keys: Record<string, boolean> } {
     }
   })
 
-  function resolveDestinationWithRapier({ fromX, fromZ, toX, toZ }: { fromX: number; fromZ: number; toX: number; toZ: number }): { x: number; z: number } {
+  function resolveDestinationWithRapier({ fromX, fromZ, toX, toZ }: { fromX: number; fromZ: number; toX: number; toZ: number }): {
+    x: number
+    z: number
+  } {
     const rapier = physicsStore.rapier
     const physWorld = physicsStore.world
     if (rapier === null || physWorld === null) {
@@ -72,9 +76,18 @@ export function useInputCapture(): { keys: Record<string, boolean> } {
     const dirX = dx / dist
     const dirZ = dz / dist
 
+    // Exclude the player's own rigid body so the ray doesn't hit the player collider.
+    const w = ecsStore.world
+    const players = query(w, [w.components.PlayerTag])
+    const playerBody = players.length > 0 ? physicsStore.getBody({ eid: players[0] }) : null
+
+    // Exclude sensors so interaction zones don't block the destination ray.
+    // QueryFilterFlags.EXCLUDE_SENSORS = 8
+    const EXCLUDE_SENSORS = 8
+
     // Cast a ray from source toward destination to find first solid hit.
     const ray = new rapier.Ray({ x: fromX, y: 0.25, z: fromZ }, { x: dirX, y: 0, z: dirZ })
-    const hit = physWorld.castRay(ray, dist, true)
+    const hit = physWorld.castRay(ray, dist, true, EXCLUDE_SENSORS, undefined, undefined, playerBody ?? undefined)
 
     if (hit !== null) {
       // Stop slightly before the hit point.

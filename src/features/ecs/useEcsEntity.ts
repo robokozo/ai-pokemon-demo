@@ -90,9 +90,10 @@ export function useEcsEntity({
     const hd = kind === "player" ? PLAYER_HALF_EXTENT : (colliderSize?.hd ?? 0.5)
 
     // Player uses kinematic body; everything else is fixed (static).
-    const bodyDesc = kind === "player"
-      ? RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position[0], position[1], position[2])
-      : RAPIER.RigidBodyDesc.fixed().setTranslation(position[0], position[1], position[2])
+    const bodyDesc =
+      kind === "player"
+        ? RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position[0], position[1], position[2])
+        : RAPIER.RigidBodyDesc.fixed().setTranslation(position[0], position[1], position[2])
 
     const body = physWorld.createRigidBody(bodyDesc)
     physicsStore.addBody({ eid, body })
@@ -110,11 +111,19 @@ export function useEcsEntity({
     addComponent(w, eid, ColliderRef)
     ColliderRef.index[eid] = eid
 
+    // Player gets a character controller so movement slides against solid walls/furniture.
+    if (kind === "player") {
+      const controller = physWorld.createCharacterController(0.01)
+      physicsStore.setCharacterController({ controller })
+    }
+
     // ── Sensor for interaction zone ────────────────────────────────────────
     if (interactive === true) {
       const sensorHw = hw + INTERACTION_SENSOR_PADDING
       const sensorHd = hd + INTERACTION_SENSOR_PADDING
-      const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd).setSensor(true)
+      const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd)
+        .setSensor(true)
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
       const sensor = physWorld.createCollider(sensorDesc, body)
       physicsStore.addSensor({ eid, sensor })
 
@@ -140,7 +149,9 @@ export function useEcsEntity({
 
     const sensorHw = (colliderSize?.hw ?? 0.5) + INTERACTION_SENSOR_PADDING
     const sensorHd = (colliderSize?.hd ?? 0.5) + INTERACTION_SENSOR_PADDING
-    const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd).setSensor(true)
+    const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd)
+      .setSensor(true)
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
     const sensor = physWorld.createCollider(sensorDesc, body)
     physicsStore.addSensor({ eid, sensor })
 

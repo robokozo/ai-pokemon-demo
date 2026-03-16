@@ -40,6 +40,7 @@ watch(isFadedOut, (isFaded) => {
   } else if (isFaded !== true && sceneNav.isTransitioning === true) {
     useTimeoutFn(() => {
       sceneNav.isTransitioning = false
+      gameState.setPaused(false)
     }, FADE_DURATION_MS)
   }
 })

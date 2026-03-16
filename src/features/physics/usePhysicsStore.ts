@@ -13,6 +13,9 @@ export const usePhysicsStore = defineStore("physics", () => {
   const colliders = new Map<number, RAPIER.Collider>()
   const sensors = new Map<number, RAPIER.Collider>()
 
+  // Character controller for the player — handles collision sliding against solid bodies.
+  const characterController = shallowRef<RAPIER.KinematicCharacterController | null>(null)
+
   // Reverse lookup: collider handle → bitECS entity id.
   const colliderToEid = new Map<number, number>()
 
@@ -26,6 +29,10 @@ export const usePhysicsStore = defineStore("physics", () => {
   }
 
   function destroySceneWorld() {
+    if (characterController.value !== null) {
+      characterController.value.free()
+      characterController.value = null
+    }
     bodies.clear()
     colliders.clear()
     sensors.clear()
@@ -34,6 +41,13 @@ export const usePhysicsStore = defineStore("physics", () => {
       world.value.free()
       world.value = null
     }
+  }
+
+  function setCharacterController({ controller }: { controller: RAPIER.KinematicCharacterController }) {
+    if (characterController.value !== null) {
+      characterController.value.free()
+    }
+    characterController.value = controller
   }
 
   function addBody({ eid, body }: { eid: number; body: RAPIER.RigidBody }) {
@@ -100,8 +114,10 @@ export const usePhysicsStore = defineStore("physics", () => {
     colliders,
     sensors,
     colliderToEid,
+    characterController,
     createSceneWorld,
     destroySceneWorld,
+    setCharacterController,
     addBody,
     addCollider,
     addSensor,

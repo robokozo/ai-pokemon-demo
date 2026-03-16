@@ -19,15 +19,30 @@ export function physicsSystem({ world }: { world: EcsWorld }) {
   const { Position, Velocity, RigidBodyRef, PlayerTag } = world.components
   const dynamicEntities = query(world, [RigidBodyRef, Position, Velocity])
 
+  // QueryFilterFlags.EXCLUDE_SENSORS = 8 — prevent sensor zones from blocking movement.
+  const EXCLUDE_SENSORS = 8
+
+  const controller = physicsStore.characterController
+
   // Apply kinematic target for player entities.
   for (const eid of dynamicEntities) {
     const body = physicsStore.getBody({ eid })
     if (body === null) continue
 
     if (hasComponent(world, eid, PlayerTag) === true) {
-      const targetX = Position.x[eid] + Velocity.x[eid]
-      const targetZ = Position.z[eid] + Velocity.z[eid]
-      body.setNextKinematicTranslation({ x: targetX, y: 0, z: targetZ })
+      const collider = physicsStore.getCollider({ eid })
+
+      if (controller !== null && collider !== null) {
+        // Character controller computes collision-aware movement (slides along walls, no clipping).
+        controller.computeColliderMovement(collider, { x: Velocity.x[eid], y: 0, z: Velocity.z[eid] }, EXCLUDE_SENSORS)
+        const corrected = controller.computedMovement()
+        const pos = body.translation()
+        body.setNextKinematicTranslation({ x: pos.x + corrected.x, y: pos.y, z: pos.z + corrected.z })
+      } else {
+        const targetX = Position.x[eid] + Velocity.x[eid]
+        const targetZ = Position.z[eid] + Velocity.z[eid]
+        body.setNextKinematicTranslation({ x: targetX, y: 0, z: targetZ })
+      }
     }
   }
 
