@@ -40,68 +40,48 @@ CURRENT OBJECTIVE: Encourage the player to sit down at the dining table and eat.
 <template>
   <SceneShell :config="sceneConfig" clear-color="#1a1a1e" :ambient-intensity="1.4" :directional-intensity="0.5" :directional-position="[2, 8, 4]">
     <!-- Walls (north split for staircase gap; east + west full; south split for front door) -->
-    <Wall id="wall-north-l" :position="[-3.93, 0, -6.25]" :width="6.14" :depth="0.5" color="#7a6548" />
-    <Wall id="wall-north-r" :position="[3.93, 0, -6.25]" :width="6.14" :depth="0.5" color="#7a6548" />
-    <Wall id="wall-left" :position="[-7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
-    <Wall id="wall-right" :position="[7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
+    <Wall :position="[-3.93, 0, -6.25]" :width="6.14" :depth="0.5" color="#7a6548" />
+    <Wall :position="[3.93, 0, -6.25]" :width="6.14" :depth="0.5" color="#7a6548" />
+    <Wall :position="[-7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
+    <Wall :position="[7.25, 0, 0]" :width="0.5" :depth="13" color="#7a6548" />
     <!-- South wall split — gap matches doorway frame width (~1.5 units) -->
-    <Wall id="wall-south-w" :position="[-3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
-    <Wall id="wall-south-e" :position="[3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
+    <Wall :position="[-3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
+    <Wall :position="[3.875, 0, 6.25]" :width="6.25" :depth="0.5" color="#7a6548" />
 
     <!-- ── Living room (west) ─────────────────────────────────────── -->
-    <Sofa id="living-sofa" name="Sofa" :position="[-4.5, 0, -1.0]" />
-    <Table id="coffee-table" name="Coffee Table" :position="[-4.5, 0, 1.0]" />
+    <Sofa name="Sofa" :position="[-4.5, 0, -1.0]" />
+    <Table name="Coffee Table" :position="[-4.5, 0, 1.0]" />
     <Rug :position="[-4.0, 0, 0.5]" />
 
     <!-- TV against west wall, rotated to face east into the room -->
-    <TV id="living-tv" name="Living Room TV" :position="[-6.3, 0, -0.5]" :rotation="[0, Math.PI / 2, 0]">
+    <TV :position="[-6.3, 0, -0.5]" :rotation="[0, Math.PI / 2, 0]">
       <InteractionIndicator :position="[0, 1.87, 0]" />
     </TV>
 
     <!-- Decorative plant on a small pedestal stand -->
-    <TVStand id="plant-stand" name="Plant Stand" :position="[-5.5, 0, 3.0]">
+    <TVStand name="Plant Stand" :position="[-5.5, 0, 3.0]">
       <FlowerVase :position="[0, 0.5, 0]" />
     </TVStand>
 
     <!-- ── Kitchen / dining (east) ───────────────────────────────── -->
     <!-- Counter along north wall -->
-    <KitchenCounter id="counter-north" name="Kitchen Counter" :position="[4.5, 0, -5.5]" />
+    <KitchenCounter name="Kitchen Counter" :position="[4.5, 0, -5.5]" />
     <!-- Counter along east wall (rotated 90°, collider swapped) -->
-    <KitchenCounter
-      id="counter-east"
-      name="Kitchen Counter"
-      :position="[6.5, 0, -3.5]"
-      :rotation="[0, Math.PI / 2, 0]"
-      :collider-size="{ hw: 0.35, hd: 1.5 }"
-    />
+    <KitchenCounter name="Kitchen Counter" :position="[6.5, 0, -3.5]" :rotation="[0, Math.PI / 2, 0]" :collider-size="{ hw: 0.35, hd: 1.5 }" />
 
-    <DiningTable id="dining-table" name="Dining Table" :position="[4.0, 0, 1.5]" />
+    <DiningTable name="Dining Table" :position="[4.0, 0, 1.5]" />
 
-    <MomNpc id="mom" name="Mom" :position="[3.0, 0, -2.5]" is-static :description="momDescription">
+    <MomNpc name="Mom" :position="[3.0, 0, -2.5]" :description="momDescription">
       <InteractionIndicator :position="[0, 2.1, 0]" />
     </MomNpc>
 
     <!-- ── Front door — south wall centre, leading outside ────────── -->
-    <Doorway
-      id="front-door-inside"
-      name="Front Door"
-      :position="[0, 0, 6.2]"
-      target-scene="home-exterior"
-      target-entrypoint="from-first-floor"
-      action-label="Go outside"
-    >
+    <Doorway name="Front Door" :position="[0, 0, 6.2]" target-scene="home-exterior" target-entrypoint="from-first-floor" action-label="Go outside">
       <InteractionIndicator :position="[0, 1.8, 0]" />
     </Doorway>
 
     <!-- ── Staircase — north wall centred, leading upstairs ───────── -->
-    <Staircase
-      id="first-floor-stairs"
-      name="Stairs"
-      :position="[0, -0.22, -6.9]"
-      target-scene="bedroom"
-      target-entrypoint="from-first-floor"
-      action-label="Go upstairs"
-    >
+    <Staircase name="Stairs" :position="[0, -0.22, -6.9]" target-scene="bedroom" target-entrypoint="from-first-floor" action-label="Go upstairs">
       <InteractionIndicator :position="[0, 1.3, 0]" />
     </Staircase>
   </SceneShell>

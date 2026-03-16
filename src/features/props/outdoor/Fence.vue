@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../../ecs/useEcsEntity"
+import { useStaticBody } from "../../ecs/useStaticBody"
 
 interface Props {
-  id?: string
   name?: string
   position?: [number, number, number]
   width?: number
@@ -11,21 +11,15 @@ interface Props {
   castShadow?: boolean
 }
 
-const { id, name = "Fence", position = [0, 0, 0], width = 3, rotation = [0, 0, 0], colliderSize, castShadow = false } = defineProps<Props>()
+const { name = "Fence", position = [0, 0, 0], width = 3, rotation = [0, 0, 0], colliderSize, castShadow = false } = defineProps<Props>()
 
 const POST_COUNT = Math.max(2, Math.round(width / 1.5) + 1)
 const FENCE_HEIGHT = 0.5
 const POST_HEIGHT = 0.6
 
-useEcsEntity({
-  id,
-  name,
-  kind: "prop",
-  collider: "solid",
-  colliderSize: colliderSize ?? { hw: width / 2, hd: 0.1 },
-  isStatic: true,
-  position,
-})
+const { eid } = useEcsEntity({ name, kind: "prop", position })
+const resolvedColliderSize = colliderSize ?? { hw: width / 2, hd: 0.1 }
+useStaticBody({ eid, hw: resolvedColliderSize.hw, hd: resolvedColliderSize.hd })
 </script>
 
 <template>

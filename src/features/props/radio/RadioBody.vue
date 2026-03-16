@@ -9,13 +9,7 @@ interface Props {
 
 const { position = [0, 0, 0], rotation = [0, 0, 0], state = "off" } = defineProps<Props>()
 
-useEcsEntity({
-  name: "RadioBody",
-  kind: "prop",
-  collider: "none",
-  isStatic: true,
-  position,
-})
+useEcsEntity({ name: "RadioBody", kind: "prop", position })
 </script>
 
 <template>

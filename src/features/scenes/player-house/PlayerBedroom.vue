@@ -26,12 +26,12 @@ const sceneConfig: SceneConfig = {
 
 <template>
   <SceneShell :config="sceneConfig">
-    <Wall id="wall-top" :position="[0, 0, -4.25]" :width="10" :depth="0.5" color="#8b7355" />
+    <Wall :position="[0, 0, -4.25]" :width="10" :depth="0.5" color="#8b7355" />
     <!-- Bottom wall split — gap matches staircase width including outer rail edges (±0.86) -->
-    <Wall id="wall-bottom-l" :position="[-2.93, 0, 4.25]" :width="4.14" :depth="0.5" color="#8b7355" />
-    <Wall id="wall-bottom-r" :position="[2.93, 0, 4.25]" :width="4.14" :depth="0.5" color="#8b7355" />
-    <Wall id="wall-left" :position="[-5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
-    <Wall id="wall-right" :position="[5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
+    <Wall :position="[-2.93, 0, 4.25]" :width="4.14" :depth="0.5" color="#8b7355" />
+    <Wall :position="[2.93, 0, 4.25]" :width="4.14" :depth="0.5" color="#8b7355" />
+    <Wall :position="[-5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
+    <Wall :position="[5.25, 0, 0]" :width="0.5" :depth="9" color="#7a6548" />
 
     <Bed :position="[3.5, 0, -2.8]" />
     <Bookshelf :position="[-4.8, 0, -2.5]" />
@@ -46,19 +46,12 @@ const sceneConfig: SceneConfig = {
     </TV>
 
     <!-- Side table with flower vase along the back wall -->
-    <TVStand id="vase-stand" name="Side Table" :position="[1.5, 0, -3.8]">
+    <TVStand name="Side Table" :position="[1.5, 0, -3.8]">
       <FlowerVase :position="[0, 0.5, 0]" />
     </TVStand>
 
     <!-- Staircase — south wall, centred, steps descend into room -->
-    <Staircase
-      id="bedroom-stairs"
-      name="Stairs"
-      :position="[0, -0.66, 4.9]"
-      :rotation="[0, 0, 0]"
-      target-scene="first-floor"
-      target-entrypoint="from-bedroom"
-    >
+    <Staircase name="Stairs" :position="[0, -0.66, 4.9]" :rotation="[0, 0, 0]" target-scene="first-floor" target-entrypoint="from-bedroom">
       <InteractionIndicator :position="[0, 1.3, 0]" />
     </Staircase>
   </SceneShell>

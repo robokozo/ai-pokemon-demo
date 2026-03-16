@@ -8,6 +8,8 @@ import OcclusionRevealer from "../camera/OcclusionRevealer.vue"
 import { useSceneSetup } from "./useSceneSetup"
 import type { SceneConfig } from "./useSceneSetup"
 import { usePhysicsStore } from "../physics/usePhysicsStore"
+import { useEcsStore } from "../ecs/useEcsStore"
+import { resetMovementState } from "../ecs/systems/movementSystem"
 
 interface Props {
   config: SceneConfig
@@ -20,15 +22,18 @@ interface Props {
 const { config, clearColor = "#1a1a2e", ambientIntensity = 1.5, directionalIntensity = 0.4, directionalPosition = [2, 6, 3] } = defineProps<Props>()
 
 const physicsStore = usePhysicsStore()
+const ecsStore = useEcsStore()
 
-// Vue initialises the new component's setup() BEFORE the old component's onUnmounted fires.
-// Calling destroySceneWorld() here ensures the previous world is torn down before we create
-// a fresh one — otherwise the old onUnmounted would destroy the world we just created.
+// Vue runs the new component's setup() BEFORE the old component's onUnmounted.
+// All shared scene resources must therefore be torn down proactively here, before
+// recreating them — otherwise the old onUnmounted would destroy what we just built.
 physicsStore.destroySceneWorld()
 physicsStore.createSceneWorld()
+ecsStore.resetWorld()
+resetMovementState()
 
-// Snapshot the world we just created so onUnmounted can tell if it's still ours.
-// If a newer scene has already replaced the world by the time onUnmounted fires, we skip.
+// Snapshot the world we own so onUnmounted can skip teardown if a newer scene
+// has already replaced it by the time this instance unmounts.
 const myWorld = physicsStore.world
 
 onUnmounted(() => {

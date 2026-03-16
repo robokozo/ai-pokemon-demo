@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../ecs/useEcsEntity"
+import { useStaticBody } from "../ecs/useStaticBody"
+import { useInteractionSensor } from "../ecs/useInteractionSensor"
 import { useSceneNavigation } from "../scenes/useSceneNavigation"
 import type { SceneName } from "../scenes/useSceneNavigation"
 
 interface Props {
-  id?: string
   name?: string
   position?: [number, number, number]
   rotation?: [number, number, number]
@@ -15,7 +16,6 @@ interface Props {
 }
 
 const {
-  id = "doorway",
   name = "Door",
   position = [0, 0, 0],
   rotation = [0, 0, 0],
@@ -27,18 +27,15 @@ const {
 
 const sceneNav = useSceneNavigation()
 
-useEcsEntity({
-  id,
+const { eid } = useEcsEntity({
   name,
   kind: "prop",
-  collider: "solid",
-  colliderSize: { hw: 0.6, hd: 0.3 },
-  interactive: true,
-  isStatic: true,
   position,
   onInteract: () => sceneNav.setScene({ scene: targetScene, entrypoint: targetEntrypoint }),
   actionLabel: () => actionLabel,
 })
+const { body } = useStaticBody({ eid, hw: 0.6, hd: 0.3 })
+useInteractionSensor({ eid, body, hw: 0.6, hd: 0.3 })
 
 const DOOR_WIDTH = 1.2
 const DOOR_HEIGHT = 1.2

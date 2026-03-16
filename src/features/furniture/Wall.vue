@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../ecs/useEcsEntity"
+import { useStaticBody } from "../ecs/useStaticBody"
 
 const WALL_HEIGHT = 2.5
 
 interface Props {
-  id?: string
   name?: string
   position: [number, number, number]
   width: number
@@ -13,9 +13,10 @@ interface Props {
   castShadow?: boolean
 }
 
-const { id, name, position, width, depth, color = "#8b7355", castShadow = false } = defineProps<Props>()
+const { name, position, width, depth, color = "#8b7355", castShadow = false } = defineProps<Props>()
 
-useEcsEntity({ id, name, kind: "prop", collider: "solid", colliderSize: { hw: width / 2, hd: depth / 2 }, isStatic: true, position })
+const { eid } = useEcsEntity({ name, kind: "prop", position })
+useStaticBody({ eid, hw: width / 2, hd: depth / 2 })
 </script>
 
 <template>

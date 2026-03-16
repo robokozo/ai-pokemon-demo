@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../../ecs/useEcsEntity"
+import { useStaticBody } from "../../ecs/useStaticBody"
 
 interface Props {
-  id?: string
   name?: string
   position?: [number, number, number]
   castShadow?: boolean
 }
 
-const { id = "house", name = "House", position = [0, 0, 0], castShadow = false } = defineProps<Props>()
+const { name = "House", position = [0, 0, 0], castShadow = false } = defineProps<Props>()
 
-useEcsEntity({
-  id,
-  name,
-  kind: "prop",
-  collider: "solid",
-  colliderSize: { hw: 4.0, hd: 3.5 },
-  isStatic: true,
-  position,
-})
+const { eid } = useEcsEntity({ name, kind: "prop", position })
+useStaticBody({ eid, hw: 4.0, hd: 3.5 })
 
 const WALL_COLOR = "#d4c4a8"
 const ROOF_COLOR = "#8b3a3a"

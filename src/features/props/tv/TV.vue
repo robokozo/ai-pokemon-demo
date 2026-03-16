@@ -2,6 +2,7 @@
 import { ref, watch } from "vue"
 import { useTVNews } from "./useTVNews"
 import { useEcsEntity } from "../../ecs/useEcsEntity"
+import { useInteractionSensor } from "../../ecs/useInteractionSensor"
 import TVStand from "../../furniture/TVStand.vue"
 
 interface Props {
@@ -19,17 +20,14 @@ function toggleTV() {
 }
 
 // Interactive entity — TVStand handles the solid collision
-useEcsEntity({
-  id: "tv",
+const { eid } = useEcsEntity({
   name: "TV",
   kind: "prop",
-  collider: "none",
-  interactive: true,
-  isStatic: true,
   position,
   onInteract: () => toggleTV(),
   actionLabel: () => (tvState.value === "on" ? "Turn off TV" : "Turn on TV"),
 })
+useInteractionSensor({ eid, hw: 0.5, hd: 0.5 })
 
 const TV_INITIAL_DELAY_MS = 800
 
@@ -63,7 +61,7 @@ watch(
 <template>
   <!-- TVStand owns the cabinet visuals and solid collision.
        All slot content is positioned relative to the stand group's origin. -->
-  <TVStand id="tv-stand" name="TV Stand" :position="position" :rotation="rotation" :collider-size="{ hw: 0.35, hd: 0.75 }" :cast-shadow="castShadow">
+  <TVStand name="TV Stand" :position="position" :rotation="rotation" :collider-size="{ hw: 0.35, hd: 0.75 }" :cast-shadow="castShadow">
     <!-- Housing — centre sits 1.0 above stand base (stand top = y 0.5) -->
     <TresMesh :position="[0, 1.0, 0]" :cast-shadow="castShadow">
       <TresBoxGeometry :args="[1.4, 0.9, 0.28]" />

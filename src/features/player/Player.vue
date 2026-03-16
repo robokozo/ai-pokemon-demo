@@ -7,6 +7,8 @@ import { useEcsEntity } from "../ecs/useEcsEntity"
 import { useEcsPosition } from "../ecs/useEcsPosition"
 import { useGameLoop } from "../ecs/useGameLoop"
 import { useInputCapture } from "../ecs/useInputCapture"
+import { useKinematicBody } from "../ecs/useKinematicBody"
+import { useEcsStore } from "../ecs/useEcsStore"
 
 interface Props {
   initialPosition?: [number, number, number]
@@ -14,7 +16,13 @@ interface Props {
 
 const { initialPosition = [0, 0, 1] } = defineProps<Props>()
 
-const { eid } = useEcsEntity({ kind: "player", collider: "solid", position: initialPosition })
+const PLAYER_HALF_EXTENT = 0.3 as const
+
+const ecsStore = useEcsStore()
+const { eid } = useEcsEntity({ kind: "player", position: initialPosition })
+useKinematicBody({ eid, hw: PLAYER_HALF_EXTENT, hd: PLAYER_HALF_EXTENT })
+// Sync reactive position immediately so the camera starts at the correct position.
+ecsStore.updatePlayerPosition({ x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] })
 const { getPosition } = useEcsPosition({ eid })
 const { keys } = useInputCapture()
 const { facing } = useGameLoop({ keys })

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../../ecs/useEcsEntity"
+import { useStaticBody } from "../../ecs/useStaticBody"
+import { useInteractionSensor } from "../../ecs/useInteractionSensor"
 import { useRadio } from "./useRadio"
 
 interface Props {
@@ -12,18 +14,15 @@ const { position = [0, 0, 0], rotation = [0, 0, 0], castShadow = false } = defin
 
 const { radioState, toggle } = useRadio()
 
-useEcsEntity({
-  id: "radio",
+const { eid } = useEcsEntity({
   name: "Radio",
   kind: "prop",
-  collider: "solid",
-  colliderSize: { hw: 0.45, hd: 0.28 },
-  interactive: true,
-  isStatic: true,
   position,
   onInteract: () => toggle(),
   actionLabel: () => (radioState.value === "on" ? "Turn off radio" : "Turn on radio"),
 })
+const { body } = useStaticBody({ eid, hw: 0.45, hd: 0.28 })
+useInteractionSensor({ eid, body, hw: 0.45, hd: 0.28 })
 </script>
 
 <template>

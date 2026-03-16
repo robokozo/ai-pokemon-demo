@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import { useEcsEntity } from "../ecs/useEcsEntity"
+import { useStaticBody } from "../ecs/useStaticBody"
 
 interface Props {
-  id?: string
   name?: string
   position?: [number, number, number]
   colliderSize: { hw: number; hd: number }
 }
 
-const { id, name = "Barrier", position = [0, 0, 0], colliderSize } = defineProps<Props>()
+const { name = "Barrier", position = [0, 0, 0], colliderSize } = defineProps<Props>()
 
-useEcsEntity({
-  id,
-  name,
-  kind: "prop",
-  collider: "solid",
-  colliderSize,
-  isStatic: true,
-  position,
-})
+const { eid } = useEcsEntity({ name, kind: "prop", position })
+useStaticBody({ eid, hw: colliderSize.hw, hd: colliderSize.hd })
 </script>
 
 <template>
