@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { shallowRef } from "vue"
-import { useLoop } from "@tresjs/core"
+import { useRafFn } from "@vueuse/core"
 import { useGLTF } from "@tresjs/cientos"
 import type { Group } from "three"
 import { useEcsEntity } from "../ecs/useEcsEntity"
@@ -25,8 +25,7 @@ const MODEL_SCALE = 0.085 as const
 
 const groupRef = shallowRef<Group | null>(null)
 
-const { onBeforeRender } = useLoop()
-onBeforeRender(() => {
+useRafFn(() => {
   const group = groupRef.value
   if (group === null) return
 

@@ -21,11 +21,20 @@ const { config, clearColor = "#1a1a2e", ambientIntensity = 1.5, directionalInten
 
 const physicsStore = usePhysicsStore()
 
-// Create a fresh Rapier physics world for this scene.
+// Vue initialises the new component's setup() BEFORE the old component's onUnmounted fires.
+// Calling destroySceneWorld() here ensures the previous world is torn down before we create
+// a fresh one — otherwise the old onUnmounted would destroy the world we just created.
+physicsStore.destroySceneWorld()
 physicsStore.createSceneWorld()
 
+// Snapshot the world we just created so onUnmounted can tell if it's still ours.
+// If a newer scene has already replaced the world by the time onUnmounted fires, we skip.
+const myWorld = physicsStore.world
+
 onUnmounted(() => {
-  physicsStore.destroySceneWorld()
+  if (physicsStore.world === myWorld) {
+    physicsStore.destroySceneWorld()
+  }
 })
 
 const { floorTiles, solidFloorColor, roomWidth, roomHeight, cameraPosition, cameraLookAt, spawnPosition, gameState } = useSceneSetup(config)

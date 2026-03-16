@@ -50,6 +50,12 @@ export function useEcsEntity({
   Position.y[eid] = position[1]
   Position.z[eid] = position[2]
 
+  // Sync reactive player position immediately so the camera is correct on the
+  // first frame of a new scene, even while the game is paused during transition.
+  if (kind === "player") {
+    ecsStore.updatePlayerPosition({ x: position[0], y: position[1], z: position[2] })
+  }
+
   // ── Tag components ─────────────────────────────────────────────────────────
   if (kind === "player") {
     addComponent(w, eid, w.components.PlayerTag)
@@ -124,6 +130,7 @@ export function useEcsEntity({
       const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd)
         .setSensor(true)
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
+        .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL)
       const sensor = physWorld.createCollider(sensorDesc, body)
       physicsStore.addSensor({ eid, sensor })
 
@@ -152,6 +159,7 @@ export function useEcsEntity({
     const sensorDesc = RAPIER.ColliderDesc.cuboid(sensorHw, COLLIDER_HALF_HEIGHT, sensorHd)
       .setSensor(true)
       .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
+      .setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL)
     const sensor = physWorld.createCollider(sensorDesc, body)
     physicsStore.addSensor({ eid, sensor })
 

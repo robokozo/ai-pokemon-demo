@@ -2,14 +2,12 @@
 import { ref, watch } from "vue"
 import { useTimeoutFn } from "@vueuse/core"
 import { useSceneNavigation } from "../scenes/useSceneNavigation"
-import { useGameState } from "../game/useGameState"
 
 import type { SceneName, Entrypoint } from "../scenes/useSceneNavigation"
 
 const FADE_DURATION_MS = 300
 
 const sceneNav = useSceneNavigation()
-const gameState = useGameState()
 
 const isFadedOut = ref(false)
 const visibleScene = ref(sceneNav.currentScene)
@@ -23,26 +21,26 @@ const originalSetScene = sceneNav.setScene.bind(sceneNav)
 sceneNav.setScene = function setSceneWithTransition({ scene, entrypoint = "default" }: { scene: SceneName; entrypoint?: Entrypoint }) {
   if (sceneNav.isTransitioning === true) return
   sceneNav.isTransitioning = true
-  gameState.setPaused(true)
   pendingScene.value = scene
   pendingEntrypoint.value = entrypoint
   isFadedOut.value = true
 }
 
 watch(isFadedOut, (isFaded) => {
-  if (isFaded === true && pendingScene.value !== null) {
-    useTimeoutFn(() => {
-      originalSetScene({ scene: pendingScene.value!, entrypoint: pendingEntrypoint.value })
-      visibleScene.value = pendingScene.value!
-      pendingScene.value = null
-      isFadedOut.value = false
-    }, FADE_DURATION_MS)
-  } else if (isFaded !== true && sceneNav.isTransitioning === true) {
-    useTimeoutFn(() => {
-      sceneNav.isTransitioning = false
-      gameState.setPaused(false)
-    }, FADE_DURATION_MS)
-  }
+  if (isFaded !== true || pendingScene.value === null) return
+
+  // Swap the scene once the fade-out has finished.
+  useTimeoutFn(() => {
+    originalSetScene({ scene: pendingScene.value!, entrypoint: pendingEntrypoint.value })
+    visibleScene.value = pendingScene.value!
+    pendingScene.value = null
+    isFadedOut.value = false
+  }, FADE_DURATION_MS)
+
+  // End the transition flag after both fade-out + fade-in have finished.
+  useTimeoutFn(() => {
+    sceneNav.isTransitioning = false
+  }, FADE_DURATION_MS * 2)
 })
 </script>
 
